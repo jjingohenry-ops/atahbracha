@@ -16,7 +16,7 @@ class RemindersProvider extends ChangeNotifier {
     successMessage = null;
     notifyListeners();
     try {
-      final uri = Uri.parse('http://localhost:3000/api/reminders').replace(
+      final uri = Uri.parse('https://atahbracha.com/api/reminders').replace(
         queryParameters: date != null
             ? {'date': date.toIso8601String().split('T').first}
             : null,
@@ -59,7 +59,7 @@ class RemindersProvider extends ChangeNotifier {
   Future<bool> addReminder(Map<String, dynamic> reminder) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/reminders'),
+        Uri.parse('https://atahbracha.com/api/reminders'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(reminder),
       ).timeout(

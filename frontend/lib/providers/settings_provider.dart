@@ -13,7 +13,7 @@ class SettingsProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/auth/me'));
+      final response = await http.get(Uri.parse('https://atahbracha.com/api/auth/me'));
       if (response.statusCode == 200) {
         userProfile = json.decode(response.body);
       } else {
@@ -31,7 +31,7 @@ class SettingsProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/farms'));
+      final response = await http.get(Uri.parse('https://atahbracha.com/api/farms'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         farmLocations = data['data'];

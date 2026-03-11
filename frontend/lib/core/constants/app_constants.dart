@@ -6,7 +6,7 @@ class AppConstants {
   static const String appDescription = 'Smart Livestock Management System';
   
   // API Configuration
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'https://atahbracha.com';
   static const String apiVersion = 'v1';
   static const Duration apiTimeout = Duration(seconds: 30);
   

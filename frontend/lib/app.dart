@@ -26,17 +26,17 @@ class AppConfig {
 
     switch (environment) {
       case Environment.dev:
-        _baseUrl = 'http://localhost:3000';
+        _baseUrl = 'https://atahbracha.com';
         _enableLogging = true;
         _enableCrashReporting = false;
         break;
       case Environment.staging:
-        _baseUrl = 'https://api-staging.atahbracah.com';
+        _baseUrl = 'https://atahbracha.com';
         _enableLogging = true;
         _enableCrashReporting = true;
         break;
       case Environment.prod:
-        _baseUrl = 'https://api.atahbracah.com';
+        _baseUrl = 'https://atahbracha.com';
         _enableLogging = kDebugMode;
         _enableCrashReporting = true;
         break;

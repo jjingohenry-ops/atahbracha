@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/user.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000'; // Update with your backend URL
+  static const String baseUrl = 'https://atahbracha.com';
 
   // Authenticate with Firebase token
   Future<UserModel?> authenticateWithFirebase(firebase_auth.User firebaseUser) async {

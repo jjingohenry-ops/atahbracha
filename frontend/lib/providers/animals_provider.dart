@@ -12,7 +12,7 @@ class AnimalsProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/animals'));
+      final response = await http.get(Uri.parse('https://atahbracha.com/api/animals'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         animals = data['data'];
@@ -32,7 +32,7 @@ class AnimalsProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/animals'),
+        Uri.parse('https://atahbracha.com/api/animals'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(animal),
       );

@@ -15,7 +15,7 @@ class DashboardProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/dashboard'));
+      final response = await http.get(Uri.parse('https://atahbracha.com/api/dashboard'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         stats = data['stats'];
