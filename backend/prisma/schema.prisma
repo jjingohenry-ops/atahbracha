@@ -1,0 +1,219 @@
+// This is your Prisma schema file for AWS Aurora PostgreSQL
+// Primary database is Dexie (IndexedDB), PostgreSQL is for backup and sync
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  role        Role     @default(FARMER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastSyncAt  DateTime?
+
+  farms       Farm[]
+  syncLogs    SyncLog[]
+
+  @@map("users")
+}
+
+model Farm {
+  id           String      @id @default(cuid())
+  userId       String
+  name         String
+  location     String?
+  size         Float?      // Farm size in acres
+  animalTypes  AnimalType[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  lastSyncAt   DateTime?
+
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  animals      Animal[]
+  syncLogs     SyncLog[]
+
+  @@map("farms")
+}
+
+model Animal {
+  id          String   @id @default(cuid())
+  farmId      String
+  name        String
+  type        AnimalType
+  age         Int
+  weight      Float
+  gender      Gender
+  photoUrl    String?
+  videoUrl    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastSyncAt  DateTime?
+
+  farm        Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  feedingLogs FeedingLog[]
+  gestations  Gestation[]
+  treatments  Treatment[]
+  cautionNotes CautionNote[]
+  dailyActivities DailyActivity[]
+
+  @@map("animals")
+}
+
+model FeedingLog {
+  id          String   @id @default(cuid())
+  animalId    String
+  time        DateTime
+  quantity    Float
+  foodType    String
+  notes       String?
+  createdAt   DateTime @default(now())
+  lastSyncAt  DateTime?
+
+  animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("feeding_logs")
+}
+
+model Gestation {
+  id           String         @id @default(cuid())
+  animalId     String
+  startDate    DateTime
+  expectedDate DateTime
+  status       GestationStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  lastSyncAt   DateTime?
+
+  animal       Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("gestations")
+}
+
+model Treatment {
+  id          String   @id @default(cuid())
+  animalId    String
+  drugName    String
+  dosage      String
+  date        DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  lastSyncAt  DateTime?
+
+  animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("treatments")
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  title     String
+  date      DateTime
+  time      String?
+  dosage    String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@map("reminders")
+}
+
+model CautionNote {
+  id          String   @id @default(cuid())
+  animalId    String
+  note        String
+  createdAt   DateTime @default(now())
+  lastSyncAt  DateTime?
+
+  animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("caution_notes")
+}
+
+model DailyActivity {
+  id          String   @id @default(cuid())
+  animalId    String
+  activity    String
+  time        DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  lastSyncAt  DateTime?
+
+  animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("daily_activities")
+}
+
+model SyncLog {
+  id          String     @id @default(cuid())
+  entityType  String
+  entityId    String
+  action      SyncAction
+  status      SyncStatus @default(PENDING)
+  data        Json?
+  errorMessage String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  retryCount  Int        @default(0)
+  userId      String?
+  farmId      String?
+
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  farm        Farm?      @relation(fields: [farmId], references: [id], onDelete: SetNull)
+
+  @@map("sync_logs")
+}
+
+enum Role {
+  ADMIN
+  FARMER
+}
+
+enum AnimalType {
+  DOG
+  CAT
+  CATTLE
+  CHICKEN
+  GOAT
+  SHEEP
+  PIG
+  RABBIT
+  FISH
+  HORSE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum GestationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  CONFLICT
+  ERROR
+}
+
+enum SyncAction {
+  CREATE
+  UPDATE
+  DELETE
+}

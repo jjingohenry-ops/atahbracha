@@ -1,0 +1,33 @@
+{
+  "name": "atahbracah-monorepo",
+  "version": "1.0.0",
+  "description": "Atahbracah Animal Management System - Monorepo with Flutter frontend and Node.js backend",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "cd frontend && flutter run -d web-server --web-port=8080",
+    "build:backend": "npm run build --workspace=backend",
+    "start:backend": "npm run start --workspace=backend",
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend",
+    "clean": "rm -rf frontend/build backend/dist backend/node_modules frontend/.dart_tool",
+    "test": "npm test --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "atahbracah",
+    "animal-management",
+    "livestock",
+    "flutter",
+    "nodejs",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "ISC"
+}

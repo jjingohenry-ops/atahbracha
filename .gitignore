@@ -1,0 +1,113 @@
+# ============================================================
+# Node.js / Backend
+# ============================================================
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+coverage/
+.nyc_output
+pids/
+*.pid
+*.pid.lock
+tmp/
+temp/
+
+# ============================================================
+# Environment & Secrets — NEVER commit real .env files
+# ============================================================
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# ============================================================
+# Flutter / Dart
+# ============================================================
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.metadata
+frontend/.pub-cache/
+frontend/.pub/
+frontend/coverage/
+# NOTE: pubspec.lock IS intentionally committed (reproducible builds)
+
+# Flutter generated Dart files
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart
+
+# ============================================================
+# Android
+# ============================================================
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+frontend/android/key.properties
+*.jks
+*.p12
+*.keystore
+
+# ============================================================
+# iOS / macOS
+# ============================================================
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/ephemeral/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/macos/Flutter/ephemeral/
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift
+*.mobileprovision
+*.p8
+*.orig.*
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.lnk
+
+# ============================================================
+# Binary / build artifacts that don't belong in source control
+# ============================================================
+*.zip
+*.tar.gz
+*.tgz
+
+# ============================================================
+# Uploads directory (user-generated content, not source code)
+# ============================================================
+backend/src/public/uploads/*
+!backend/src/public/uploads/.gitkeep
