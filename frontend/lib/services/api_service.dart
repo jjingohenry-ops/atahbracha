@@ -3,14 +3,16 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../models/user.dart';
+import '../core/network/api_base.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://atahbracha.com';
+  String get baseUrl => ApiBase.api;
 
   // Authenticate with Firebase token
   Future<UserModel?> authenticateWithFirebase(firebase_auth.User firebaseUser) async {
     try {
-      final idToken = await firebaseUser.getIdToken();
+      // Force-refresh to ensure backend receives token for the current Firebase user.
+      final idToken = await firebaseUser.getIdToken(true);
       final response = await http.post(
         Uri.parse('$baseUrl/auth/firebase'),
         headers: {

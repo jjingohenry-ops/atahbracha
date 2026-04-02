@@ -36,7 +36,7 @@ class DefaultFirebaseOptions {
     appId: '1:659845068895:web:23e8fbf9af5cef43fcc3ea',
     messagingSenderId: '659845068895',
     projectId: 'atahbracah',
-    authDomain: 'atahbracah.firebaseapp.com',
+    authDomain: 'atahbracha.com',
     storageBucket: 'atahbracah.firebasestorage.app',
     measurementId: 'G-S00VM7160T',
   );

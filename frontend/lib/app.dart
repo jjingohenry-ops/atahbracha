@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'core/network/api_base.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/navigation_service.dart';
 import 'core/themes/app_theme.dart';
@@ -26,17 +27,17 @@ class AppConfig {
 
     switch (environment) {
       case Environment.dev:
-        _baseUrl = 'https://atahbracha.com';
+        _baseUrl = ApiBase.origin;
         _enableLogging = true;
         _enableCrashReporting = false;
         break;
       case Environment.staging:
-        _baseUrl = 'https://atahbracha.com';
+        _baseUrl = ApiBase.origin;
         _enableLogging = true;
         _enableCrashReporting = true;
         break;
       case Environment.prod:
-        _baseUrl = 'https://atahbracha.com';
+        _baseUrl = ApiBase.origin;
         _enableLogging = kDebugMode;
         _enableCrashReporting = true;
         break;
@@ -71,11 +72,11 @@ class AppConfig {
   static String get appName {
     switch (_environment) {
       case Environment.dev:
-        return 'SmartLivestock (Dev)';
+        return 'Atahbracha (Dev)';
       case Environment.staging:
-        return 'SmartLivestock (Staging)';
+        return 'Atahbracha (Staging)';
       case Environment.prod:
-        return 'SmartLivestock Manager';
+        return 'Atahbracha';
     }
   }
 
@@ -200,10 +201,14 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.agriculture,
-              size: 80,
-              color: AppTheme.primaryColor,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset(
+                'assets/images/app_logo.jpg',
+                width: 88,
+                height: 88,
+                fit: BoxFit.cover,
+              ),
             ),
             const SizedBox(height: 24),
             Text(

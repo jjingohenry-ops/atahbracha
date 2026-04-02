@@ -1,12 +1,18 @@
+import '../network/api_base.dart';
+
 /// Application-wide constants following best practices
 class AppConstants {
   // App Information
-  static const String appName = 'SmartLivestock Manager';
+  static const String appName = 'Atahbracha';
   static const String appVersion = '1.0.0';
+  static const String buildLabel = String.fromEnvironment(
+    'APP_BUILD',
+    defaultValue: '20260322_2',
+  );
   static const String appDescription = 'Smart Livestock Management System';
   
   // API Configuration
-  static const String baseUrl = 'https://atahbracha.com';
+  static String get baseUrl => ApiBase.origin;
   static const String apiVersion = 'v1';
   static const Duration apiTimeout = Duration(seconds: 30);
   

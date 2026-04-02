@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.initialSignUp = false});
+
+  final bool initialSignUp;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -15,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   final _passwordController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _phoneController = TextEditingController();
 
   bool _isSignUp = false;
   bool _isLoading = false;
@@ -28,6 +30,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _isSignUp = widget.initialSignUp;
+    _tabController.index = widget.initialSignUp ? 1 : 0;
   }
 
   @override
@@ -36,7 +40,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _passwordController.dispose();
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _phoneController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -125,19 +128,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         key: _formKey,
                         child: Column(
                           children: [
-                            // Email/Phone Field
+                            // Email Field
                             TextFormField(
                               controller: _emailController,
                               decoration: InputDecoration(
-                                labelText: 'Email or Phone Number',
+                                labelText: 'Email Address',
                                 labelStyle: const TextStyle(
                                   color: Colors.black87,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 14,
                                 ),
-                                hintText: 'Enter your email or phone',
+                                hintText: 'Enter your email',
                                 prefixIcon: const Icon(
-                                  Icons.person,
+                                  Icons.email_outlined,
                                   color: Colors.grey,
                                 ),
                                 border: OutlineInputBorder(
@@ -166,23 +169,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   vertical: 16,
                                 ),
                               ),
-                              keyboardType: TextInputType.text,
+                              keyboardType: TextInputType.emailAddress,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter your email or phone number';
+                                  return 'Please enter your email address';
                                 }
-                                
-                                // Check if it's an email
-                                if (value.contains('@')) {
-                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                    return 'Please enter a valid email address';
-                                  }
-                                } else {
-                                  // Check if it's a phone number
-                                  if (!RegExp(r'^[\+]?[1-9][\d]{0,15}$').hasMatch(value)) {
-                                    return 'Please enter a valid phone number';
-                                  }
+
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return 'Please enter a valid email address';
                                 }
+
                                 return null;
                               },
                             ),
@@ -348,43 +344,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 },
                               ),
                               
-                              const SizedBox(height: 16),
-                              
-                              TextFormField(
-                                controller: _phoneController,
-                                decoration: InputDecoration(
-                                  labelText: 'Phone Number',
-                                  prefixIcon: const Icon(Icons.phone, color: Colors.grey),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.green.withOpacity(0.2),
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.green.withOpacity(0.2),
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF13EC5B),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                ),
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your phone number';
-                                  }
-                                  return null;
-                                },
-                              ),
                             ],
                             
                             const SizedBox(height: 24),
@@ -541,49 +500,63 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     // Footer
                     Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'By continuing, you agree to our ',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                      child: Column(
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              text: 'By continuing, you agree to our ',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                              children: [
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      // TODO: Implement terms of service
+                                    },
+                                    child: const Text(
+                                      'Terms of Service',
+                                      style: TextStyle(
+                                        color: Color(0xFF13EC5B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' and '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      // TODO: Implement privacy policy
+                                    },
+                                    child: const Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        color: Color(0xFF13EC5B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: '.'),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          children: [
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // TODO: Implement terms of service
-                                },
-                                child: const Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    color: Color(0xFF13EC5B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Live Build: V(${AppConstants.buildLabel})',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                              height: 1.1,
                             ),
-                            const TextSpan(text: ' and '),
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  // TODO: Implement privacy policy
-                                },
-                                child: const Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    color: Color(0xFF13EC5B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const TextSpan(text: '.'),
-                          ],
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -601,46 +574,39 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final input = _emailController.text.trim();
+      final inputEmail = _emailController.text.trim();
       
       if (_isSignUp) {
-        // For sign up, only email is supported
-        if (!input.contains('@')) {
-          throw Exception('Please use email for sign up');
-        }
-        
         final success = await authProvider.signUp(
-          input,
+          inputEmail,
           _passwordController.text,
           _firstNameController.text.trim(),
           _lastNameController.text.trim(),
         );
         if (!success) throw Exception(authProvider.errorMessage ?? 'Sign up failed');
-      } else {
-        // For sign in, check if email or phone
-        if (input.contains('@')) {
-          // Email sign in
-          final success = await authProvider.signIn(
-            input,
-            _passwordController.text,
-          );
-          if (!success) throw Exception(authProvider.errorMessage ?? 'Sign in failed');
-        } else {
-          // Phone sign in - trigger phone auth flow
-          await authProvider.signInWithPhone(input);
-          _showCodeVerificationDialog(input);
-          return; // Don't navigate yet, wait for code verification
+
+        final sent = await authProvider.sendEmailVerification();
+        if (!sent) {
+          throw Exception(authProvider.errorMessage ?? 'Failed to send verification email');
         }
+      } else {
+        final success = await authProvider.signIn(
+          inputEmail,
+          _passwordController.text,
+        );
+        if (!success) throw Exception(authProvider.errorMessage ?? 'Sign in failed');
       }
       
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        if (authProvider.requiresEmailVerification) {
+          Navigator.of(context).pushReplacementNamed('/verify-email');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().contains('email') 
-            ? 'Invalid email or password'
-            : 'Authentication failed. Please try again.';
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
       if (mounted) {
@@ -658,7 +624,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       if (!success) throw Exception(authProvider.errorMessage ?? 'Google sign-in failed');
       
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        if (authProvider.requiresEmailVerification) {
+          Navigator.of(context).pushReplacementNamed('/verify-email');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
       }
     } catch (e) {
       setState(() {
@@ -675,22 +645,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     showDialog(
       context: context,
       builder: (context) => PhoneSignInDialog(
-        onSignIn: (phoneNumber, verificationId, code) async {
-          // Handle phone sign in
+        onSendCode: (phoneNumber) async {
           try {
             final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            
-            if (verificationId.isEmpty && code.isNotEmpty) {
-              // Verify code
-              final success = await authProvider.verifyPhoneCode(verificationId, code);
-              if (success && mounted) {
-                Navigator.of(context).pushReplacementNamed('/home');
-              }
+            final verificationId = await authProvider.requestPhoneVerificationCode(phoneNumber);
+
+            if (verificationId != null && verificationId.isNotEmpty) {
+              if (!mounted) return;
+              _showCodeVerificationDialog(phoneNumber, verificationId);
             } else {
-              // Send code
-              await authProvider.signInWithPhone(phoneNumber);
-              // Show code verification dialog
-              _showCodeVerificationDialog(phoneNumber);
+              if (!mounted) return;
+              setState(() {
+                _errorMessage = authProvider.errorMessage ?? 'Unable to send verification code.';
+              });
             }
           } catch (e) {
             if (mounted) {
@@ -707,7 +674,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
-  void _showCodeVerificationDialog(String phoneNumber) {
+  void _showCodeVerificationDialog(String phoneNumber, String verificationId) {
     showDialog(
       context: context,
       builder: (context) => CodeVerificationDialog(
@@ -715,9 +682,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         onVerify: (code) async {
           try {
             final authProvider = Provider.of<AuthProvider>(context, listen: false);
-            final success = await authProvider.verifyPhoneCode('', code);
+            final success = await authProvider.verifyPhoneCode(verificationId, code);
             if (success && mounted) {
-              Navigator.of(context).pushReplacementNamed('/home');
+              if (authProvider.requiresEmailVerification) {
+                Navigator.of(context).pushReplacementNamed('/verify-email');
+              } else {
+                Navigator.of(context).pushReplacementNamed('/home');
+              }
             }
           } catch (e) {
             if (mounted) {
@@ -737,9 +708,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
 // Phone Sign In Dialog
 class PhoneSignInDialog extends StatefulWidget {
-  final Function(String phoneNumber, String verificationId, String code) onSignIn;
+  final Future<void> Function(String phoneNumber) onSendCode;
 
-  const PhoneSignInDialog({super.key, required this.onSignIn});
+  const PhoneSignInDialog({super.key, required this.onSendCode});
 
   @override
   State<PhoneSignInDialog> createState() => _PhoneSignInDialogState();
@@ -791,8 +762,12 @@ class _PhoneSignInDialogState extends State<PhoneSignInDialog> {
   void _sendCode() {
     if (_phoneController.text.isNotEmpty) {
       setState(() => _isLoading = true);
-      widget.onSignIn(_phoneController.text, '', '');
-      Navigator.of(context).pop();
+      widget.onSendCode(_phoneController.text.trim()).whenComplete(() {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          Navigator.of(context).pop();
+        }
+      });
     }
   }
 

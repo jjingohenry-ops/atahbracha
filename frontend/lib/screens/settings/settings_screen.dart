@@ -1,7 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../farms/farms_screen.dart';
+import '../marketing/marketing_screen.dart';
+import '../reminders/reminders_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -13,10 +20,18 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _biometricEnabled = false;
   bool _notificationsEnabled = true;
-  bool _darkModeEnabled = false;
 
   static const _primary = Color(0xFF13EC5B);
   static const _dark = Color(0xFF102216);
+
+  Uint8List? _decodeAvatar(String? base64Avatar) {
+    if (base64Avatar == null || base64Avatar.isEmpty) return null;
+    try {
+      return base64Decode(base64Avatar);
+    } catch (_) {
+      return null;
+    }
+  }
 
   @override
   void initState() {
@@ -35,6 +50,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final initials = user != null
             ? '${user.firstName.isNotEmpty ? user.firstName[0] : ''}${user.lastName.isNotEmpty ? user.lastName[0] : ''}'.toUpperCase()
             : '?';
+        final avatarBase64 = settingsProvider.getProfileAvatarForUser(user?.id);
+        final avatarBytes = _decodeAvatar(avatarBase64);
         final fullName = user?.fullName ?? 'Loading...';
         final email = user?.email ?? '';
         final role = user?.role ?? '';
@@ -59,23 +76,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: _primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: _dark,
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 36,
+                        backgroundColor: _primary,
+                        backgroundImage: avatarBytes != null ? MemoryImage(avatarBytes) : null,
+                        child: avatarBytes == null
+                            ? Text(
+                                initials,
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: _dark,
+                                ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: InkWell(
+                          onTap: () => _pickAndSaveProfileImage(context, settingsProvider, user?.id),
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: _dark,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white, width: 1.5),
+                            ),
+                            child: const Icon(Icons.edit, size: 14, color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -158,12 +193,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _divider(),
               _navTile(
+                icon: Icons.photo_camera_outlined,
+                title: 'Profile Photo',
+                subtitle: 'Update dashboard avatar',
+                onTap: () => _pickAndSaveProfileImage(context, settingsProvider, user?.id),
+              ),
+              _divider(),
+              _navTile(
                 icon: Icons.location_on_outlined,
-                title: 'Farm Locations',
+                title: 'Farms',
                 subtitle: settingsProvider.farmLocations != null
-                    ? '${settingsProvider.farmLocations!.length} location${settingsProvider.farmLocations!.length == 1 ? '' : 's'}'
+                    ? '${settingsProvider.farmLocations!.length} farm${settingsProvider.farmLocations!.length == 1 ? '' : 's'}'
                     : 'Loading...',
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FarmsScreen()),
+                  );
+                },
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.campaign_outlined,
+                title: 'Marketing',
+                subtitle: 'Campaigns and promotions',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MarketingScreen()),
+                  );
+                },
+              ),
+              _divider(),
+              _navTile(
+                icon: Icons.event_note_outlined,
+                title: 'Reminders',
+                subtitle: 'Tasks and alerts',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RemindersScreen()),
+                  );
+                },
               ),
             ]),
 
@@ -207,9 +275,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _toggleTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Dark Mode',
-                subtitle: _darkModeEnabled ? 'On' : 'Off',
-                value: _darkModeEnabled,
-                onChanged: (v) => setState(() => _darkModeEnabled = v),
+                subtitle: settingsProvider.isDarkMode ? 'On' : 'Off',
+                value: settingsProvider.isDarkMode,
+                onChanged: (v) => settingsProvider.setDarkMode(v),
               ),
             ]),
 
@@ -345,6 +413,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return const Divider(height: 1, indent: 56, endIndent: 16);
   }
 
+  Future<void> _pickAndSaveProfileImage(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+    String? userId,
+  ) async {
+    if (userId == null || userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to set a profile photo.')),
+      );
+      return;
+    }
+
+    try {
+      final imagePicker = ImagePicker();
+      final picked = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 720,
+      );
+
+      if (picked == null) {
+        return;
+      }
+
+      final bytes = await picked.readAsBytes();
+      final encoded = base64Encode(bytes);
+
+      await settingsProvider.setProfileAvatarForUser(
+        userId: userId,
+        base64Image: encoded,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo updated.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to update profile photo.')),
+      );
+    }
+  }
+
+  Future<void> _showUpdateFarmLocationDialog(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) async {
+    if (settingsProvider.farmLocations == null) {
+      await settingsProvider.fetchFarmLocations();
+    }
+
+    final farms = (settingsProvider.farmLocations ?? [])
+        .whereType<Map>()
+        .map((farm) => Map<String, dynamic>.from(farm))
+        .toList();
+
+    String selectedFarmId = farms.isNotEmpty
+        ? (farms.first['id']?.toString() ?? 'local-default')
+        : 'local-default';
+
+    String selectedFarmName = farms.isNotEmpty
+        ? (farms.first['name']?.toString() ?? 'Main Farm')
+        : 'Main Farm';
+
+    final controller = TextEditingController(
+      text: farms.isNotEmpty ? (farms.first['location']?.toString() ?? '') : '',
+    );
+
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text('Update Farm Location'),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (farms.length > 1)
+                      DropdownButtonFormField<String>(
+                        value: selectedFarmId,
+                        decoration: const InputDecoration(
+                          labelText: 'Farm',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: farms.map((farm) {
+                          final id = farm['id']?.toString() ?? 'local-default';
+                          final name = farm['name']?.toString() ?? 'Main Farm';
+                          return DropdownMenuItem<String>(
+                            value: id,
+                            child: Text(name),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          final selectedFarm = farms.firstWhere(
+                            (farm) => farm['id']?.toString() == value,
+                            orElse: () => farms.first,
+                          );
+
+                          setDialogState(() {
+                            selectedFarmId = value;
+                            selectedFarmName = selectedFarm['name']?.toString() ?? 'Main Farm';
+                            controller.text = selectedFarm['location']?.toString() ?? '';
+                          });
+                        },
+                      )
+                    else
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          selectedFarmName,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: controller,
+                      decoration: const InputDecoration(
+                        labelText: 'Location',
+                        hintText: 'Enter farm location',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Location is required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState?.validate() != true) return;
+                    Navigator.pop(dialogContext, true);
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (saved == true) {
+      await settingsProvider.updateFarmLocation(
+        farmId: selectedFarmId,
+        location: controller.text,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Location updated for $selectedFarmName.')),
+      );
+    }
+  }
+
   Future<void> _confirmSignOut(BuildContext context, AuthProvider authProvider) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -362,6 +600,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (confirmed == true) {
       await authProvider.signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     }
   }
 }

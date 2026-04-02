@@ -251,14 +251,31 @@ export class AuthService {
       let dbUser = await prisma.user.findUnique({
         where: { id: firebaseUser.uid }
       });
+      const normalizedEmail = (firebaseUser.email || '').trim().toLowerCase();
+      const fallbackProviderEmail = `firebase_${firebaseUser.uid}@local.invalid`;
+      const effectiveEmail = normalizedEmail || fallbackProviderEmail;
 
       if (!dbUser) {
-        // Create user in Aurora PostgreSQL if they don't exist
+        // Do not attach a Firebase identity to a different DB user id implicitly.
+        // This prevents cross-account profile leakage in mixed legacy/Firebase setups.
+        if (normalizedEmail) {
+          const existingByEmail = await prisma.user.findUnique({
+            where: { email: normalizedEmail }
+          });
+          if (existingByEmail && existingByEmail.id !== firebaseUser.uid) {
+            return {
+              success: false,
+              error: 'This email is already linked to another account record. Contact support to merge accounts safely.'
+            };
+          }
+        }
+
+        // Create user in Aurora PostgreSQL if they don't exist.
         const names = firebaseUser.displayName?.split(' ') || ['', ''];
         dbUser = await prisma.user.create({
           data: {
             id: firebaseUser.uid,
-            email: firebaseUser.email || '',
+            email: effectiveEmail,
             password: 'firebase-auth-user', // Default password for Firebase users
             firstName: names[0] || '',
             lastName: names.slice(1).join(' ') || '',
@@ -272,7 +289,7 @@ export class AuthService {
         dbUser = await prisma.user.update({
           where: { id: firebaseUser.uid },
           data: {
-            email: firebaseUser.email || dbUser.email,
+            email: normalizedEmail || dbUser.email,
             firstName: names[0] || dbUser.firstName,
             lastName: names.slice(1).join(' ') || dbUser.lastName,
             phone: firebaseUser.phoneNumber || dbUser.phone,

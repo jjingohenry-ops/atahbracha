@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/reminders_provider.dart';
-import '../../models/user.dart';
+import '../../providers/settings_provider.dart';
 import 'new_reminder_sheet.dart';
+import '../auth/login_screen.dart';
+import '../home/home_screen.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -23,125 +26,185 @@ class _RemindersScreenState extends State<RemindersScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider =
           Provider.of<RemindersProvider>(context, listen: false);
-      provider.fetchReminders(date: DateTime.now());
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      provider.fetchReminders(
+        date: DateTime.now(),
+        farmId: settingsProvider.activeFarmId,
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    assert(() {
+      debugPaintBaselinesEnabled = false;
+      debugPaintSizeEnabled = false;
+      debugPaintPointersEnabled = false;
+      debugPaintLayerBordersEnabled = false;
+      debugRepaintRainbowEnabled = false;
+      return true;
+    }());
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.user;
-        
-        return user == null
-            ? const Center(child: CircularProgressIndicator())
-            : SafeArea(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Compact calendar week view
-                      _buildWeekCalendar(),
 
-                      // Tasks Header
-                      _buildTasksHeader(),
+        return Scaffold(
+          backgroundColor: const Color(0xFFF6F8F6),
+          body: user == null
+              ? const LoginScreen()
+              : SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Compact calendar week view
+                        _buildWeekCalendar(),
 
-                      // Task List
-                      Consumer<RemindersProvider>(
-                        builder: (context, provider, _) {
-                          if (provider.isLoading) {
-                            return const Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Center(child: CircularProgressIndicator()),
-                            );
-                          }
-                          if (provider.error != null) {
-                            return Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.red[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.red[300]!),
+                        // Tasks Header
+                        _buildTasksHeader(),
+
+                        // Task List
+                        Consumer<RemindersProvider>(
+                          builder: (context, provider, _) {
+                            if (provider.isLoading) {
+                              return const Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            }
+                            if (provider.error != null) {
+                              return Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.red[300]!),
+                                  ),
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    children: [
+                                      const Icon(Icons.error_outline, color: Colors.red, size: 32),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Oops! Unable to Load Reminders',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.red[700],
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        provider.error!,
+                                        style: TextStyle(fontSize: 14, color: Colors.red[600]),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton.icon(
+                                        onPressed: () async {
+                                          final settingsProvider =
+                                              Provider.of<SettingsProvider>(context, listen: false);
+                                          await provider.fetchReminders(
+                                            date: provider.selectedDate,
+                                            farmId: settingsProvider.activeFarmId,
+                                          );
+                                        },
+                                        icon: const Icon(Icons.refresh, size: 18),
+                                        label: const Text('Retry'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                padding: const EdgeInsets.all(16),
+                              );
+                            }
+                            if (provider.reminders.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.all(24),
                                 child: Column(
                                   children: [
-                                    const Icon(Icons.error_outline, color: Colors.red, size: 32),
+                                    Icon(Icons.add_circle_outline,
+                                      size: 48,
+                                      color: Colors.grey[400]
+                                    ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      'Oops! Unable to Load Reminders',
+                                      'No reminders',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey[700],
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      provider.error!,
-                                      style: TextStyle(fontSize: 14, color: Colors.red[600]),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton.icon(
-                                      onPressed: () async {
-                                        await provider.fetchReminders(date: provider.selectedDate);
-                                      },
-                                      icon: const Icon(Icons.refresh, size: 18),
-                                      label: const Text('Retry'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                        foregroundColor: Colors.white,
-                                      ),
+                                      'Add reminder',
+                                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                                     ),
                                   ],
                                 ),
-                              ),
-                            );
-                          }
-                          if (provider.reminders.isEmpty) {
-                            return Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                children: [
-                                  Icon(Icons.add_circle_outline, 
-                                    size: 48, 
-                                    color: Colors.grey[400]
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No reminders',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Add reminder',
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return _buildTaskList(provider.reminders);
-                        },
-                      ),
-                    ],
+                              );
+                            }
+                            return _buildTaskList(provider.reminders);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: 3,
+            onTap: (index) {
+              if (index == 3) {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => const HomeScreen(initialTabIndex: 3)),
+                  );
+                }
+                return;
+              }
+
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => HomeScreen(initialTabIndex: index)),
               );
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.pets),
+                label: 'Animals',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline),
+                label: 'Chat',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.menu),
+                label: 'More',
+              ),
+            ],
+            selectedItemColor: Colors.green,
+            unselectedItemColor: Colors.grey,
+            showUnselectedLabels: true,
+          ),
+        );
       },
     );
   }
 
   Widget _buildWeekCalendar() {
     // simple horizontal week view for mobile
-    final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
     final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
     return Container(
       height: 80,
@@ -160,8 +223,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
               return GestureDetector(
                 onTap: () {
                   setState(() => _selectedDay = day);
+                    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
                   provider.filterByDate(
                     DateTime(_currentMonth.year, _currentMonth.month, day),
+                      farmId: settingsProvider.activeFarmId,
                   );
                 },
                 child: Container(
@@ -300,7 +365,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
         }
         final title = task['drugName'] as String? ?? 'Reminder';
         final location = task['dosage'] as String? ?? '';
-        final note = task['notes'] as String?;
         final isCompleted = date != null && date.isBefore(DateTime.now());
         
         return Container(

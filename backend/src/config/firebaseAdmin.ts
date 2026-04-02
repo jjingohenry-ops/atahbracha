@@ -58,12 +58,22 @@ export const authenticateFirebaseToken = async (req: any, res: any, next: any) =
 
     // Verify Firebase token
     const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+    const signInProvider = decodedToken.firebase?.sign_in_provider;
+
+    // Production guard: require verified email for password-based authentication.
+    if (signInProvider === 'password' && !decodedToken.email_verified) {
+      return res.status(403).json({
+        success: false,
+        error: 'Email not verified. Please verify your email before continuing.'
+      });
+    }
 
     // Attach user info to request
     req.user = {
       uid: decodedToken.uid,
       email: decodedToken.email,
       emailVerified: decodedToken.email_verified,
+      signInProvider,
       name: decodedToken.name,
       picture: decodedToken.picture,
       firebaseToken: token

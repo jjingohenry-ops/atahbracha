@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { getFarmsByUser } from './farmController';
-import { authenticateToken } from '../../middlewares/auth';
+import { getFarmsByUser, createFarm } from './farmController';
+import { authenticateFirebaseToken } from '../../config/firebaseAdmin';
 
 const router = Router();
 
-router.get('/', authenticateToken, getFarmsByUser);
+router.get('/', authenticateFirebaseToken, getFarmsByUser);
+router.post('/', authenticateFirebaseToken, createFarm);
 
 export { router as farmRoutes };

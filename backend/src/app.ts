@@ -6,12 +6,13 @@ import morgan from 'morgan';
 import path from 'path';
 import { config } from './config/env';
 import { authRoutes } from './modules/auth/authRoutes';
-
-import { syncService } from './modules/sync/syncService';
+// import { syncService } from './modules/sync/syncService'; // Sync service uses Dexie (browser-only), not compatible with Node.js backend
 import { dashboardRoutes } from './modules/dashboard/dashboardRoutes';
 import { farmRoutes } from './modules/farm/farmRoutes';
 import { animalRoutes } from './modules/animal/animalRoutes';
 import { remindersRoutes } from './modules/treatment/treatmentRoutes';
+import { aiRoutes } from './modules/ai/aiRoutes';
+import { chatRoutes } from './modules/chat/chatRoutes';
 
 const app = express();
 
@@ -80,6 +81,10 @@ app.use('/api/animals', animalRoutes);
 console.log('✅ Animals routes registered');
 app.use('/api/reminders', remindersRoutes);
 console.log('✅ Reminders routes registered');
+app.use('/api/ai', aiRoutes);
+console.log('✅ AI routes registered');
+app.use('/api/chat', chatRoutes);
+console.log('✅ Chat routes registered');
 
 // Global error handler
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction): void => {
@@ -141,9 +146,10 @@ app.use((req, res, next) => {
 });
 
 // Start sync service if enabled
-if (config.SYNC_INTERVAL > 0) {
-  syncService.startAutoSync(config.SYNC_INTERVAL);
-  console.log(`Auto-sync started with ${config.SYNC_INTERVAL}ms interval`);
-}
+// Sync service is for Flutter client app only, not needed on Node.js backend
+// if (config.SYNC_INTERVAL > 0) {
+//   syncService.startAutoSync(config.SYNC_INTERVAL);
+//   console.log(`Auto-sync started with ${config.SYNC_INTERVAL}ms interval`);
+// }
 
 export { app };

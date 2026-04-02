@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -7,13 +8,26 @@ import 'providers/dashboard_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/animals_provider.dart';
 import 'providers/reminders_provider.dart';
+import 'providers/chat_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/email_verification_screen.dart';
 import 'screens/auth/test_auth_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/landing/landing_screen.dart';
 import 'screens/test/simple_test_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  assert(() {
+    // Ensure debug paint overlays are disabled (baseline lines, repaint rainbow, etc.).
+    debugPaintSizeEnabled = false;
+    debugPaintBaselinesEnabled = false;
+    debugPaintPointersEnabled = false;
+    debugPaintLayerBordersEnabled = false;
+    debugRepaintRainbowEnabled = false;
+    return true;
+  }());
 
   try {
     // Initialize Firebase
@@ -41,18 +55,27 @@ class SmartLivestockApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => AnimalsProvider()),
         ChangeNotifierProvider(create: (_) => RemindersProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: MaterialApp(
-        title: 'SmartLivestock Manager',
+        title: 'Atahbracha',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.green,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.light,
+          ),
           visualDensity: VisualDensity.adaptivePlatformDensity,
           useMaterial3: true,
         ),
+        // Mobile-first production lock: keep light theme until dark mode is fully tuned.
+        themeMode: ThemeMode.light,
         home: const AuthWrapper(),
         routes: {
+          '/landing': (context) => const LandingScreen(),
           '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const LoginScreen(initialSignUp: true),
+          '/verify-email': (context) => const EmailVerificationScreen(),
           '/home': (context) => const HomeScreen(),
           '/test': (context) => const TestAuthScreen(),
           '/simple': (context) => const SimpleTestScreen(),
@@ -115,10 +138,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
           }
 
           if (authProvider.user != null) {
+            if (authProvider.requiresEmailVerification) {
+              return const EmailVerificationScreen();
+            }
             return const HomeScreen();
           }
 
-          return const LoginScreen();
+          return const LandingScreen();
         } catch (e) {
           print('AuthWrapper error: $e');
           return Scaffold(

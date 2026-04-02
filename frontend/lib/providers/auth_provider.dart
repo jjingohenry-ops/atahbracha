@@ -1,13 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
-import '../core/utils/app_logger.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
+  StreamSubscription<User?>? _authStateSubscription;
   UserModel? _user;
   bool _isLoading = true;
   String? _errorMessage;
@@ -16,25 +18,50 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
+  bool get requiresEmailVerification {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) return false;
+
+    final usesPasswordProvider = firebaseUser.providerData.any(
+      (provider) => provider.providerId == 'password',
+    );
+
+    return usesPasswordProvider && !firebaseUser.emailVerified;
+  }
 
   AuthProvider() {
     _initializeAuth();
   }
 
   void _initializeAuth() async {
-    try {
-      // Check if user is already signed in
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        await _loadUserData(currentUser);
-      }
-    } catch (e) {
-      _errorMessage = 'Failed to initialize authentication';
-      debugPrint('Auth initialization error: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen(
+      (firebaseUser) async {
+        _isLoading = true;
+        notifyListeners();
+
+        try {
+          if (firebaseUser == null) {
+            _user = null;
+            _errorMessage = null;
+          } else {
+            await _loadUserData(firebaseUser);
+          }
+        } catch (e) {
+          _errorMessage = 'Failed to initialize authentication';
+          debugPrint('Auth initialization error: $e');
+          _user = null;
+        } finally {
+          _isLoading = false;
+          notifyListeners();
+        }
+      },
+      onError: (Object error) {
+        _errorMessage = 'Authentication listener error';
+        _user = null;
+        _isLoading = false;
+        notifyListeners();
+      },
+    );
   }
 
   Future<void> checkAuthStatus() async {
@@ -63,9 +90,15 @@ class AuthProvider with ChangeNotifier {
     try {
       // Try to get user data from API
       final userData = await _apiService.authenticateWithFirebase(firebaseUser);
-      if (userData != null) {
+      if (userData != null && userData.id == firebaseUser.uid) {
         _user = userData;
       } else {
+        if (userData != null && userData.id != firebaseUser.uid) {
+          debugPrint(
+            'Auth identity mismatch detected. Firebase UID=${firebaseUser.uid}, API UID=${userData.id}',
+          );
+        }
+
         // Create user object from Firebase user
         _user = UserModel(
           id: firebaseUser.uid,
@@ -87,6 +120,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
+  }
+
   // Email/Password Sign Up
   Future<bool> signUp(String email, String password, String firstName, String lastName) async {
     _isLoading = true;
@@ -96,7 +135,12 @@ class AuthProvider with ChangeNotifier {
     try {
       final result = await _authService.signUp(email, password, firstName, lastName);
       if (result != null) {
-        _user = result;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
         return true;
       }
       _errorMessage = 'Sign up failed';
@@ -119,7 +163,12 @@ class AuthProvider with ChangeNotifier {
     try {
       final result = await _authService.signIn(email, password);
       if (result != null) {
-        _user = result;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
         return true;
       }
       _errorMessage = 'Sign in failed';
@@ -142,12 +191,28 @@ class AuthProvider with ChangeNotifier {
     try {
       final result = await _authService.signInWithGoogle();
       if (result != null) {
-        _user = result;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
         return true;
       }
+
+      if (kIsWeb) {
+        // Redirect-based Google sign-in continues after a full-page round trip.
+        _errorMessage = null;
+        return true;
+      }
+
       _errorMessage = 'Google sign in failed';
       return false;
     } catch (e) {
+      if (e.toString().contains('REDIRECT_IN_PROGRESS')) {
+        _errorMessage = null;
+        return true;
+      }
       _errorMessage = e.toString();
       return false;
     } finally {
@@ -158,16 +223,22 @@ class AuthProvider with ChangeNotifier {
 
   // Phone Sign In - Send Code
   Future<bool> signInWithPhone(String phoneNumber) async {
+    final verificationId = await requestPhoneVerificationCode(phoneNumber);
+    return verificationId != null && verificationId.isNotEmpty;
+  }
+
+  // Phone Sign In - request verification ID for OTP flow
+  Future<String?> requestPhoneVerificationCode(String phoneNumber) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _authService.signInWithPhoneSendCode(phoneNumber);
-      return true;
+      final verificationId = await _authService.signInWithPhoneSendCode(phoneNumber);
+      return verificationId;
     } catch (e) {
       _errorMessage = e.toString();
-      return false;
+      return null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -183,7 +254,12 @@ class AuthProvider with ChangeNotifier {
     try {
       final result = await _authService.verifyPhoneCode(verificationId, smsCode);
       if (result != null) {
-        _user = result;
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
         return true;
       }
       _errorMessage = 'Phone verification failed';
@@ -218,5 +294,42 @@ class AuthProvider with ChangeNotifier {
   void clearError() {
     _errorMessage = null;
     notifyListeners();
+  }
+
+  Future<bool> sendEmailVerification() async {
+    try {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        _errorMessage = 'No authenticated user found';
+        notifyListeners();
+        return false;
+      }
+
+      await firebaseUser.sendEmailVerification();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> reloadAndCheckVerification() async {
+    try {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) return false;
+
+      await firebaseUser.reload();
+      final refreshedUser = FirebaseAuth.instance.currentUser;
+      if (refreshedUser == null) return false;
+
+      await _loadUserData(refreshedUser);
+      notifyListeners();
+      return !requiresEmailVerification;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 }

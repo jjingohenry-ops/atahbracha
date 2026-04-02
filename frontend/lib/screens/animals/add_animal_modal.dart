@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'dart:typed_data';
 import '../../providers/animals_provider.dart';
 import '../../providers/settings_provider.dart';
 
@@ -12,6 +14,18 @@ class AddAnimalModal extends StatefulWidget {
 
 class _AddAnimalModalState extends State<AddAnimalModal> {
   final _formKey = GlobalKey<FormState>();
+  static const List<String> _speciesOptions = [
+    'Cattle',
+    'Goat',
+    'Sheep',
+    'Pig',
+    'Chicken',
+    'Horse',
+    'Dog',
+    'Cat',
+    'Rabbit',
+    'Fish',
+  ];
 
   // Form field controllers
   late TextEditingController _nameController;
@@ -25,11 +39,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
 
   // Form state
   String _selectedSpecies = 'Cattle';
+  String _selectedGender = 'MALE';
   DateTime? _dateOfBirth;
-  bool _isMale = true;
   bool _isPregnant = false;
-  bool _photoSelected = false;
+  bool _isUploadingPhoto = false;
+  bool _isSaving = false;
   bool _submitAttempted = false;
+  XFile? _selectedPhoto;
+  Uint8List? _selectedPhotoBytes;
+  String? _uploadedPhotoUrl;
+  String? _photoUploadError;
+  String? _saveError;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -81,48 +102,129 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
   };
 
   Future<void> _saveAnimal() async {
-    setState(() => _submitAttempted = true);
-    final formValid = _formKey.currentState!.validate();
-    if (!formValid || !_photoSelected) return;
+    if (_isSaving) return;
 
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    // Ensure farms are loaded so we have a farmId
-    if (settingsProvider.farmLocations == null) {
-      await settingsProvider.fetchFarmLocations();
+    setState(() {
+      _submitAttempted = true;
+      _saveError = null;
+    });
+    final formValid = _formKey.currentState!.validate();
+    if (!formValid) return;
+
+    if (_selectedPhotoBytes == null) {
+      return;
     }
-    final farms = settingsProvider.farmLocations;
-    if (farms == null || farms.isEmpty) {
+
+    if (_isUploadingPhoto) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No farm found. Please set up a farm first.')),
+        const SnackBar(content: Text('Photo is still uploading. Please wait...')),
       );
       return;
     }
 
-    final farmId = farms[0]['id'] as String;
-    final animalData = <String, dynamic>{
-      'farmId': farmId,
-      'name': _nameController.text.trim(),
-      'type': _speciesMap[_selectedSpecies] ?? _selectedSpecies.toUpperCase(),
-      'gender': _isMale ? 'MALE' : 'FEMALE',
-      'age': int.tryParse(_ageController.text.trim()) ?? 0,
-      'weight': double.tryParse(_weightController.text.trim()) ?? 0.0,
-      if (_notesController.text.trim().isNotEmpty) 'notes': _notesController.text.trim(),
-      if (_tagController.text.trim().isNotEmpty) 'tagNumber': _tagController.text.trim(),
-      if (_breedController.text.trim().isNotEmpty) 'breed': _breedController.text.trim(),
-    };
+    if (_uploadedPhotoUrl == null || _uploadedPhotoUrl!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Photo upload failed. Tap the image to retry.')),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      // Always refresh farm list from API to avoid stale/cross-account farm ids.
+      await settingsProvider.fetchFarmLocations();
+      final farms = (settingsProvider.farmLocations ?? [])
+          .whereType<Map>()
+          .map((farm) => Map<String, dynamic>.from(farm))
+          .where((farm) {
+            final id = farm['id']?.toString() ?? '';
+            return id.isNotEmpty && !id.startsWith('local-');
+          })
+          .toList();
+
+      if (farms.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No owned farm found for this account. Please create a farm first.')),
+        );
+        return;
+      }
+
+        final activeFarmId = settingsProvider.activeFarmId;
+        final farmId = activeFarmId != null && activeFarmId.isNotEmpty
+          ? activeFarmId
+          : farms.first['id']!.toString();
+      final animalData = <String, dynamic>{
+        'farmId': farmId,
+        'name': _nameController.text.trim(),
+        'type': _speciesMap[_selectedSpecies] ?? _selectedSpecies.toUpperCase(),
+        'gender': _selectedGender,
+        'age': int.tryParse(_ageController.text.trim()) ?? 0,
+        'weight': double.tryParse(_weightController.text.trim()) ?? 0.0,
+        'photoUrl': _uploadedPhotoUrl,
+        if (_notesController.text.trim().isNotEmpty) 'notes': _notesController.text.trim(),
+        if (_tagController.text.trim().isNotEmpty) 'tagNumber': _tagController.text.trim(),
+        if (_breedController.text.trim().isNotEmpty) 'breed': _breedController.text.trim(),
+      };
+
+      final animalsProvider = Provider.of<AnimalsProvider>(context, listen: false);
+      final success = await animalsProvider.addAnimal(animalData);
+
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context, true);
+      } else {
+        setState(() {
+          _saveError = animalsProvider.error ?? 'Failed to save animal. Please review your input and try again.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+
+    if (picked == null) return;
+
+    final pickedBytes = await picked.readAsBytes();
+
+    setState(() {
+      _selectedPhoto = picked;
+      _selectedPhotoBytes = pickedBytes;
+      _isUploadingPhoto = true;
+      _photoUploadError = null;
+      _saveError = null;
+    });
 
     final animalsProvider = Provider.of<AnimalsProvider>(context, listen: false);
-    final success = await animalsProvider.addAnimal(animalData);
+    final uploadedUrl = await animalsProvider.uploadAnimalPhoto(picked);
 
     if (!mounted) return;
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Animal saved successfully!')),
-      );
-      Navigator.pop(context);
+
+    if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+      setState(() {
+        _uploadedPhotoUrl = uploadedUrl;
+        _isUploadingPhoto = false;
+        _photoUploadError = null;
+      });
     } else {
+      setState(() {
+        _uploadedPhotoUrl = null;
+        _isUploadingPhoto = false;
+        _photoUploadError = animalsProvider.error ?? 'Photo upload failed';
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(animalsProvider.error ?? 'Failed to save animal.')),
+        SnackBar(content: Text(_photoUploadError!)),
       );
     }
   }
@@ -181,19 +283,11 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             text: TextSpan(
                               children: [
                                 TextSpan(
-                                  text: 'SmartLivestock ',
+                                  text: 'Register',
                                   style: TextStyle(
                                     fontSize: isMobile ? 20 : 28,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: 'Manager',
-                                  style: TextStyle(
-                                    fontSize: isMobile ? 20 : 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF13EC5B),
                                   ),
                                 ),
                               ],
@@ -218,25 +312,37 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   children: [
                     Expanded(
                       child: _buildUploadBox(
-                        icon: _photoSelected ? Icons.check_circle : Icons.add_a_photo,
-                        title: _photoSelected ? 'Photo Added' : 'Animal Photo *',
-                        subtitle: _photoSelected ? 'Tap to change' : 'PNG, JPG · 10MB',
-                        isSelected: _photoSelected,
-                        hasError: _submitAttempted && !_photoSelected,
-                        onTap: () => setState(() => _photoSelected = true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildUploadBox(
-                        icon: Icons.videocam,
-                        title: 'ID Video',
-                        subtitle: 'MP4, MOV · 50MB',
-                        onTap: () {},
+                        icon: _isUploadingPhoto
+                            ? Icons.cloud_upload
+                            : _selectedPhotoBytes != null
+                                ? Icons.check_circle
+                                : Icons.add_a_photo,
+                        title: _isUploadingPhoto
+                            ? 'Uploading...'
+                            : _selectedPhotoBytes != null
+                                ? 'Photo Added'
+                                : 'Animal Photo *',
+                        subtitle: _isUploadingPhoto
+                            ? 'Sending to cloud storage'
+                            : _selectedPhotoBytes != null
+                                ? (_selectedPhoto?.name ?? 'Tap to change')
+                                : 'PNG, JPG · 10MB',
+                        previewBytes: _selectedPhotoBytes,
+                        isSelected: _selectedPhotoBytes != null,
+                        hasError: _submitAttempted && _selectedPhotoBytes == null,
+                        onTap: _isUploadingPhoto ? () {} : _pickAndUploadPhoto,
                       ),
                     ),
                   ],
                 ),
+                if (_photoUploadError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 4),
+                    child: Text(
+                      _photoUploadError!,
+                      style: TextStyle(fontSize: 11, color: Colors.red[700]),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 // General Information Section
                 _buildSection(
@@ -270,14 +376,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: _buildDropdown(
-                                    label: 'Species',
-                                    value: _selectedSpecies,
-                                    items: ['Cattle', 'Sheep', 'Goat', 'Swine', 'Equine'],
-                                    onChanged: (value) {
-                                      setState(() => _selectedSpecies = value!);
-                                    },
-                                  ),
+                                  child: _buildSpeciesSelector(label: 'Species'),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -303,20 +402,14 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                               label: 'Animal Name',
                               hint: 'e.g. Bessie',
                               controller: _nameController,
+                              isRequired: true,
                             ),
                             _buildTextField(
                               label: 'Tag Number',
                               hint: 'SL-9001-X',
                               controller: _tagController,
                             ),
-                            _buildDropdown(
-                              label: 'Species',
-                              value: _selectedSpecies,
-                              items: ['Cattle', 'Sheep', 'Goat', 'Swine', 'Equine'],
-                              onChanged: (value) {
-                                setState(() => _selectedSpecies = value!);
-                              },
-                            ),
+                            _buildSpeciesSelector(label: 'Species'),
                             _buildTextField(
                               label: 'Breed',
                               hint: 'e.g. Holstein-Friesian',
@@ -385,12 +478,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                       if (isMobile)
                         Column(
                           children: [
-                            _buildToggle(
-                              title: 'Gender',
-                              subtitle: 'Male / Female',
-                              value: _isMale,
-                              onChanged: (value) => setState(() => _isMale = value),
-                            ),
+                            _buildGenderDropdown(),
                             const SizedBox(height: 16),
                             _buildToggle(
                               title: 'Pregnancy Status',
@@ -414,12 +502,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             Expanded(
                               child: Column(
                                 children: [
-                                  _buildToggle(
-                                    title: 'Gender',
-                                    subtitle: 'Male / Female',
-                                    value: _isMale,
-                                    onChanged: (value) => setState(() => _isMale = value),
-                                  ),
+                                  _buildGenderDropdown(),
                                   const SizedBox(height: 16),
                                   _buildToggle(
                                     title: 'Pregnancy Status',
@@ -472,13 +555,51 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 // Action Footer
                 Divider(color: Colors.grey[300]),
                 const SizedBox(height: 16),
+                if (_isSaving)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Saving animal record...',
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_saveError != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1F1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFB3B3)),
+                    ),
+                    child: Text(
+                      _saveError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF8A1F1F),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 Wrap(
                   alignment: isMobile ? WrapAlignment.center : WrapAlignment.end,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _isSaving ? null : () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         foregroundColor: Colors.grey[600],
@@ -499,10 +620,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                         ),
                       ),
                     ),
-                    ElevatedButton.icon(
-                      onPressed: _saveAnimal,
-                      icon: const Icon(Icons.save, size: 18),
-                      label: const Text('Save Animal'),
+                    ElevatedButton(
+                      onPressed: _isSaving ? null : _saveAnimal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF13EC5B),
                         foregroundColor: Colors.black,
@@ -516,6 +635,30 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
+                      child: _isSaving
+                          ? const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Saving...'),
+                              ],
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.save, size: 18),
+                                SizedBox(width: 8),
+                                Text('Save Animal'),
+                              ],
+                            ),
                     ),
                   ],
                 ),
@@ -613,6 +756,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     required IconData icon,
     required String title,
     required String subtitle,
+    Uint8List? previewBytes,
     bool isSelected = false,
     bool hasError = false,
     required VoidCallback onTap,
@@ -632,7 +776,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          height: 80,
+          height: previewBytes != null ? 190 : 100,
           decoration: BoxDecoration(
             border: Border.all(color: borderColor, width: 2),
             borderRadius: BorderRadius.circular(12),
@@ -643,34 +787,67 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             child: InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, size: 28, color: iconColor),
-                    const SizedBox(height: 6),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: hasError ? Colors.red : Colors.black87,
+              child: previewBytes != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.memory(
+                            previewBytes,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                        ),
+                        Positioned(
+                          right: 10,
+                          bottom: 10,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(icon, size: 28, color: iconColor),
+                          const SizedBox(height: 6),
+                          Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: hasError ? Colors.red : Colors.black87,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: hasError ? Colors.red[300] : Colors.grey,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: hasError ? Colors.red[300] : Colors.grey,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
               ),
-            ),
           ),
         ),
         if (hasError)
@@ -679,6 +856,14 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             child: Text(
               'Photo is required',
               style: TextStyle(fontSize: 11, color: Colors.red[700]),
+            ),
+          ),
+        if (previewBytes != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              'Tap image or pen icon to change',
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
           ),
       ],
@@ -719,6 +904,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
               : null,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.grey.withOpacity(0.35),
+              fontWeight: FontWeight.w400,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -762,6 +951,158 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         ),
       ],
     );
+  }
+
+  Widget _buildGenderDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Gender',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedGender,
+          items: const [
+            DropdownMenuItem(value: 'MALE', child: Text('Male')),
+            DropdownMenuItem(value: 'FEMALE', child: Text('Female')),
+          ],
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() => _selectedGender = value);
+          },
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpeciesSelector({required String label}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _showSpeciesPicker,
+          borderRadius: BorderRadius.circular(8),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedSpecies,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                const Icon(Icons.arrow_drop_down),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showSpeciesPicker() async {
+    String query = '';
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = _speciesOptions
+                .where((species) => species.toLowerCase().contains(query.toLowerCase()))
+                .toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: SizedBox(
+                  height: 420,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select Species',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        autofocus: true,
+                        onChanged: (value) => setModalState(() => query = value),
+                        decoration: const InputDecoration(
+                          hintText: 'Search species',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? const Center(child: Text('No species found'))
+                            : ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final species = filtered[index];
+                                  return ListTile(
+                                    title: Text(species),
+                                    trailing: species == _selectedSpecies
+                                        ? const Icon(Icons.check, color: Color(0xFF13EC5B))
+                                        : null,
+                                    onTap: () => Navigator.pop(sheetContext, species),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selected != null && selected != _selectedSpecies) {
+      setState(() => _selectedSpecies = selected);
+    }
   }
 
   Widget _buildToggle({

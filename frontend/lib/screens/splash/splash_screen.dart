@@ -124,10 +124,10 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.agriculture,
-                          size: 60,
-                          color: AppTheme.primaryColor,
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          'assets/images/app_logo.jpg',
+                          fit: BoxFit.cover,
                         ),
                       ),
                       

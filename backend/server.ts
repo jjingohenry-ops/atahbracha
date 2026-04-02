@@ -10,7 +10,9 @@ import { dashboardRoutes } from './src/modules/dashboard/dashboardRoutes';
 import { farmRoutes } from './src/modules/farm/farmRoutes';
 import { animalRoutes } from './src/modules/animal/animalRoutes';
 import { remindersRoutes } from './src/modules/treatment/treatmentRoutes';
-import { syncService } from './src/modules/sync/syncService';
+import { aiRoutes } from './src/modules/ai/aiRoutes';
+import { chatRoutes } from './src/modules/chat/chatRoutes';
+// import { syncService } from './src/modules/sync/syncService'; // Sync service uses Dexie (browser-only), not compatible with Node.js backend
 
 const app = express();
 
@@ -70,6 +72,8 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/reminders', remindersRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404 handler
 app.use((req, res, next) => {
@@ -126,10 +130,11 @@ app.use((_err: any, _req: express.Request, res: express.Response, _next: express
 });
 
 // Start sync service if enabled
-if (config.SYNC_INTERVAL > 0) {
-  syncService.startAutoSync(config.SYNC_INTERVAL);
-  console.log(`Auto-sync started with ${config.SYNC_INTERVAL}ms interval`);
-}
+// Sync service is for Flutter client app only, not needed on Node.js backend
+// if (config.SYNC_INTERVAL > 0) {
+//   syncService.startAutoSync(config.SYNC_INTERVAL);
+//   console.log(`Auto-sync started with ${config.SYNC_INTERVAL}ms interval`);
+// }
 
 const PORT = config.PORT || 3000;
 app.listen(PORT, () => {

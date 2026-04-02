@@ -1,12 +1,13 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '659845068895-23e8fbf9af5cef43fcc3ea.apps.googleusercontent.com', // Web client ID
-  );
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -60,17 +61,42 @@ class AuthService {
   // Google Sign In
   Future<UserModel?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+      UserCredential userCredential;
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      if (kIsWeb) {
+        // Prefer popup on desktop web, but fall back to redirect for mobile browsers.
+        final provider = GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
 
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        try {
+          userCredential = await _auth.signInWithPopup(provider);
+        } on FirebaseAuthException catch (e) {
+          final shouldFallbackToRedirect =
+              e.code == 'popup-blocked' ||
+              e.code == 'popup-closed-by-user' ||
+              e.code == 'operation-not-supported-in-this-environment';
 
-      final userCredential = await _auth.signInWithCredential(credential);
+          if (shouldFallbackToRedirect) {
+            await _auth.signInWithRedirect(provider);
+            throw 'REDIRECT_IN_PROGRESS';
+          }
+
+          rethrow;
+        }
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
+
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        userCredential = await _auth.signInWithCredential(credential);
+      }
 
       final names = userCredential.user!.displayName?.split(' ') ?? ['', ''];
       return UserModel(
@@ -81,12 +107,17 @@ class AuthService {
         role: 'FARMER',
       );
     } catch (e) {
+      if (e.toString().contains('REDIRECT_IN_PROGRESS')) {
+        rethrow;
+      }
       throw _handleAuthError(e);
     }
   }
 
   // Phone Sign In - Send verification code
   Future<String> signInWithPhoneSendCode(String phoneNumber) async {
+    final completer = Completer<String>();
+
     try {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -95,17 +126,23 @@ class AuthService {
           await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
-          throw _handleAuthError(e);
+          if (!completer.isCompleted) {
+            completer.completeError(_handleAuthError(e));
+          }
         },
         codeSent: (String verificationId, int? resendToken) {
-          // Return verification ID to caller
-          // In a real app, you'd store this and use it in verifyPhoneCode
+          if (!completer.isCompleted) {
+            completer.complete(verificationId);
+          }
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          // Handle timeout
+          if (!completer.isCompleted) {
+            completer.complete(verificationId);
+          }
         },
       );
-      return 'Verification code sent successfully';
+
+      return await completer.future;
     } catch (e) {
       throw _handleAuthError(e);
     }
@@ -136,11 +173,25 @@ class AuthService {
 
   // Sign Out
   Future<void> signOut() async {
+    Object? lastError;
+
+    // Google sign-out may fail for non-Google sessions; do not let it block Firebase sign-out.
     try {
       await _googleSignIn.signOut();
+    } catch (e) {
+      lastError = e;
+      debugPrint('Google sign-out warning: $e');
+    }
+
+    try {
       await _auth.signOut();
     } catch (e) {
       throw 'Sign out failed: ${e.toString()}';
+    }
+
+    // If Firebase sign-out succeeded, ignore secondary provider warnings.
+    if (lastError != null) {
+      debugPrint('Sign-out completed with non-blocking warning: $lastError');
     }
   }
 

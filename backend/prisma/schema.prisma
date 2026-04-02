@@ -24,6 +24,11 @@ model User {
 
   farms       Farm[]
   syncLogs    SyncLog[]
+  sentMessages ChatMessage[]
+  requestedChatConversations ChatConversation[] @relation("ChatRequestedBy")
+  receivedChatConversations ChatConversation[] @relation("ChatRequestedTo")
+  chatMemberships ChatConversationMember[]
+  reminders   Reminder[]
 
   @@map("users")
 }
@@ -41,6 +46,7 @@ model Farm {
 
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   animals      Animal[]
+  reminders    Reminder[]
   syncLogs     SyncLog[]
 
   @@map("farms")
@@ -119,12 +125,20 @@ model Treatment {
 
 model Reminder {
   id        String   @id @default(cuid())
+  userId    String?
+  farmId    String?
   title     String
   date      DateTime
   time      String?
   dosage    String?
   notes     String?
   createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm      Farm?    @relation(fields: [farmId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([farmId])
 
   @@map("reminders")
 }
@@ -175,6 +189,58 @@ model SyncLog {
   @@map("sync_logs")
 }
 
+model ChatConversation {
+  id            String                  @id @default(cuid())
+  status        ChatConversationStatus  @default(PENDING)
+  requestedById String
+  requestedToId String
+  acceptedAt    DateTime?
+  lastMessageAt DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  requestedBy   User                    @relation("ChatRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  requestedTo   User                    @relation("ChatRequestedTo", fields: [requestedToId], references: [id], onDelete: Cascade)
+  members       ChatConversationMember[]
+  messages      ChatMessage[]
+
+  @@index([requestedById])
+  @@index([requestedToId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("chat_conversations")
+}
+
+model ChatConversationMember {
+  id             String            @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime          @default(now())
+
+  conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("chat_conversation_members")
+}
+
+model ChatMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime          @default(now())
+  editedAt       DateTime?
+
+  conversation   ChatConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("chat_messages")
+}
+
 enum Role {
   ADMIN
   FARMER
@@ -216,4 +282,10 @@ enum SyncAction {
   CREATE
   UPDATE
   DELETE
+}
+
+enum ChatConversationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

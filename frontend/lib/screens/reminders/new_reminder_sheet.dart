@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/reminders_provider.dart';
+import '../../providers/settings_provider.dart';
 
 class NewReminderSheet extends StatefulWidget {
   const NewReminderSheet({Key? key}) : super(key: key);
@@ -53,7 +54,11 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
         'date': _date!.toIso8601String(),
         'notes': _notesController.text.isNotEmpty ? _notesController.text : null,
       };
-      final success = await provider.addReminder(reminder);
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final success = await provider.addReminder(
+        reminder,
+        farmId: settingsProvider.activeFarmId,
+      );
       if (mounted) {
         setState(() => _isLoading = false);
         if (success) {

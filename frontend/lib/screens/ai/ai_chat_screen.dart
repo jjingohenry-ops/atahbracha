@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../core/network/api_base.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -16,8 +17,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   static const _primary = Color(0xFF13EC5B);
   static const _bg = Color(0xFFF6F8F6);
-  static const _apiKey = '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';
-  static const _model = 'openai/gpt-oss-120b:free';
   static const _systemPrompt =
       'You are AtahBracha AI, an expert livestock management assistant for farmers. '
       'You help with animal health diagnostics, breeding advice, feeding plans, vaccination schedules, '
@@ -80,20 +79,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+        ApiBase.uri('/ai/chat'),
         headers: {
-          'Authorization': 'Bearer $_apiKey',
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:8080',
-          'X-Title': 'AtahBracha AI',
         },
         body: jsonEncode({
-          'model': _model,
-          'messages': [
-            {'role': 'system', 'content': _systemPrompt},
-            ..._history,
-          ],
-          'reasoning': {'enabled': true},
+          'messages': _history,
+          'systemPrompt': _systemPrompt,
         }),
       );
 
@@ -101,7 +93,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final message = data['choices'][0]['message'] as Map<String, dynamic>;
+        final message = data['data'] as Map<String, dynamic>;
         final reply = (message['content'] as String? ?? '').trim();
         // Preserve reasoning_details for multi-turn reasoning continuity
         final assistantEntry = <String, dynamic>{'role': 'assistant', 'content': reply};
@@ -115,7 +107,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
         });
       } else {
         final err = jsonDecode(response.body);
-        final errMsg = err['error']?['message'] ?? 'Request failed (${response.statusCode})';
+        final errMsg = err['error'] ?? 'Request failed (${response.statusCode})';
         _history.removeLast(); // remove user message from history on failure
         setState(() {
           _isTyping = false;

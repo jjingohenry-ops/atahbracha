@@ -12,6 +12,18 @@ class AddAnimalScreen extends StatefulWidget {
 class _AddAnimalScreenState extends State<AddAnimalScreen> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _imagePicker = ImagePicker();
+  static const List<String> _speciesOptions = [
+    'Cattle',
+    'Goat',
+    'Sheep',
+    'Pig',
+    'Chicken',
+    'Horse',
+    'Dog',
+    'Cat',
+    'Rabbit',
+    'Fish',
+  ];
   
   // Controllers
   final _nameController = TextEditingController();
@@ -29,7 +41,6 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   bool _isMale = true;
   bool _isPregnant = false;
   File? _animalImage;
-  File? _animalVideo;
   bool _isLoading = false;
 
   @override
@@ -98,11 +109,7 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                               color: Colors.black87,
                             ),
                             children: [
-                              TextSpan(text: 'Atahbracah '),
-                              TextSpan(
-                                text: 'Manager',
-                                style: TextStyle(color: Color(0xFF13EC5B)),
-                              ),
+                              TextSpan(text: 'Register'),
                             ],
                           ),
                         ),
@@ -165,137 +172,56 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
   }
 
   Widget _buildMediaUploadSection() {
-    return Row(
-      children: [
-        // Photo Upload
-        Expanded(
-          child: GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                  style: BorderStyle.solid,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-              ),
-              child: _animalImage != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.file(
-                        _animalImage!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_a_photo,
-                          size: 32,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Upload Animal Photo',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        Text(
-                          'PNG, JPG up to 10MB',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey[300]!,
+            style: BorderStyle.solid,
+            width: 2,
           ),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
         ),
-        
-        const SizedBox(width: 16),
-        
-        // Video Upload
-        Expanded(
-          child: GestureDetector(
-            onTap: _pickVideo,
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.grey[300]!,
-                  style: BorderStyle.solid,
-                  width: 2,
+        child: _animalImage != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(
+                  _animalImage!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
                 ),
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.white,
-              ),
-              child: _animalVideo != null
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.video_file,
-                          size: 32,
-                          color: const Color(0xFF13EC5B),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Video Selected',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        Text(
-                          'Tap to change',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.videocam,
-                          size: 32,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Upload Identification Video',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        Text(
-                          'MP4, MOV up to 50MB',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_a_photo,
+                    size: 32,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Upload Animal Photo',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
                     ),
-            ),
-          ),
-        ),
-      ],
+                  ),
+                  Text(
+                    'PNG, JPG up to 10MB',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -374,26 +300,46 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
           Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: _selectedSpecies,
-                  decoration: _buildInputDecoration('Species', 'Select Species'),
-                  items: const [
-                    DropdownMenuItem(value: 'Cattle', child: Text('Cattle')),
-                    DropdownMenuItem(value: 'Sheep', child: Text('Sheep')),
-                    DropdownMenuItem(value: 'Goat', child: Text('Goat')),
-                    DropdownMenuItem(value: 'Swine', child: Text('Swine')),
-                    DropdownMenuItem(value: 'Equine', child: Text('Equine')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedSpecies = value;
-                    });
-                  },
+                child: FormField<String>(
+                  initialValue: _selectedSpecies,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if ((_selectedSpecies ?? '').isEmpty) {
                       return 'Please select species';
                     }
                     return null;
+                  },
+                  builder: (field) {
+                    return InkWell(
+                      onTap: () async {
+                        final selected = await _showSpeciesPicker();
+                        if (selected != null) {
+                          setState(() => _selectedSpecies = selected);
+                          field.didChange(selected);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: InputDecorator(
+                        decoration: _buildInputDecoration('Species', 'Search and select species').copyWith(
+                          errorText: field.errorText,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedSpecies ?? 'Search and select species',
+                                style: TextStyle(
+                                  color: _selectedSpecies == null
+                                      ? Colors.grey.withOpacity(0.35)
+                                      : Colors.black87,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            const Icon(Icons.arrow_drop_down, color: Colors.black54),
+                          ],
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -735,7 +681,10 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
         fontWeight: FontWeight.w500,
       ),
       hintText: placeholder,
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      hintStyle: TextStyle(
+        color: Colors.grey.withOpacity(0.35),
+        fontWeight: FontWeight.w400,
+      ),
       filled: true,
       fillColor: Colors.grey[50],
       border: OutlineInputBorder(
@@ -769,19 +718,6 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
     }
   }
 
-  Future<void> _pickVideo() async {
-    final pickedFile = await _imagePicker.pickVideo(
-      source: ImageSource.gallery,
-      maxDuration: const Duration(minutes: 2),
-    );
-    
-    if (pickedFile != null) {
-      setState(() {
-        _animalVideo = File(pickedFile.path);
-      });
-    }
-  }
-
   Future<void> _selectDateOfBirth() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -795,6 +731,78 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
         _dateOfBirth = picked;
       });
     }
+  }
+
+  Future<String?> _showSpeciesPicker() async {
+    String query = '';
+
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = _speciesOptions
+                .where((species) => species.toLowerCase().contains(query.toLowerCase()))
+                .toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: SizedBox(
+                  height: 420,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select Species',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        autofocus: true,
+                        onChanged: (value) => setModalState(() => query = value),
+                        decoration: const InputDecoration(
+                          hintText: 'Search species',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? const Center(child: Text('No species found'))
+                            : ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (context, index) {
+                                  final species = filtered[index];
+                                  return ListTile(
+                                    title: Text(species),
+                                    trailing: species == _selectedSpecies
+                                        ? const Icon(Icons.check, color: Color(0xFF13EC5B))
+                                        : null,
+                                    onTap: () => Navigator.pop(sheetContext, species),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _saveAnimal() async {

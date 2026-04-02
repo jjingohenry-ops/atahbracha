@@ -1,35 +1,28 @@
-# Use Node.js 18 Alpine Linux image
+# Backend production image for monorepo layout.
 FROM node:18-alpine
 
-# Set working directory
-WORKDIR /app
+WORKDIR /app/backend
 
-# Copy package files
-COPY package*.json ./
+# curl is used by the container healthcheck.
+RUN apk add --no-cache curl
 
-# Install dependencies
-RUN npm ci --only=production
+# Install backend dependencies first for better build caching.
+COPY backend/package*.json ./
+RUN npm ci --omit=dev
 
-# Copy source code
-COPY . .
+# Copy backend source.
+COPY backend ./
 
-# Generate Prisma client
+# Generate Prisma client and compile TypeScript.
 RUN npx prisma generate
-
-# Create uploads directory with proper permissions
-RUN mkdir -p src/public/uploads src/public/images src/public/videos && \
-    chown -R node:node src/public
-
-# Build the application
 RUN npm run build
 
-# Expose port
+# Ensure upload directories exist at runtime.
+RUN mkdir -p src/public/uploads src/public/images src/public/videos
+
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Run the application
-USER node
 CMD ["npm", "start"]

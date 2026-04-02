@@ -68,8 +68,11 @@ npm run dev
 | Frontend only | `cd frontend && flutter run -d web-server --web-port=8080` |
 | Build backend | `cd backend && npm run build` |
 | Build Flutter web | `cd frontend && flutter build web` |
+| Release readiness gate | `npm run release:check` |
 | Prisma Studio (DB UI) | `cd backend && npx prisma studio` |
 | Push DB schema | `cd backend && npx prisma db push` |
+
+Production deployment steps are documented in `DEPLOYMENT_RUNBOOK.md`.
 
 ## 🏗️ Architecture
 
