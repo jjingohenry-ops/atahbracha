@@ -9,10 +9,10 @@ import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../../providers/settings_provider.dart';
-import '../ai/ai_chat_screen.dart';
 import '../animals/add_animal_modal.dart';
 import '../animals/animals_screen.dart';
 import '../auth/login_screen.dart';
+import '../chat/chat_screen.dart';
 import '../marketing/marketing_screen.dart';
 import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
@@ -283,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       DashboardTab(onFarmChanged: _onFarmChanged),
       const AnimalsScreen(),
-      const RemindersScreen(),
+      const ChatScreen(),
       const MarketingScreen(),
       const SettingsScreen(),
     ];
@@ -483,17 +483,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getTabTitle() {
-    const titles = ['Dashboard', 'Animals', 'Alerts', 'Reports', 'Profile'];
+    const titles = ['Dashboard', 'Animals', 'Chat', 'Market', 'Profile'];
     return titles[_selectedTabIndex];
   }
 
   Widget _buildBottomNavigationBar() {
-    const labels = ['Dashboard', 'Animals', 'Alerts', 'Reports', 'Profile'];
+    const labels = ['Dashboard', 'Animals', 'Chat', 'Market', 'Profile'];
     const icons = [
       Icons.pets,
       Icons.cruelty_free,
-      Icons.pest_control,
-      Icons.egg_alt,
+      Icons.chat_bubble_outline,
+      Icons.storefront,
       Icons.pets_outlined,
     ];
     const baseColors = [

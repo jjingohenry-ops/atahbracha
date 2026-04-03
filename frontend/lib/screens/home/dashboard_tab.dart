@@ -1316,7 +1316,7 @@ class _DashboardTabState extends State<DashboardTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           const Text(
-            'Milk Production',
+            'Production',
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: Color(0xFF0D2E14),

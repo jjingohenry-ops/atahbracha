@@ -6,7 +6,6 @@ import '../../providers/reminders_provider.dart';
 import '../../providers/settings_provider.dart';
 import 'new_reminder_sheet.dart';
 import '../auth/login_screen.dart';
-import '../home/home_screen.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -158,46 +157,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     ),
                   ),
                 ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: 3,
-            onTap: (index) {
-              if (index == 3) {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                } else {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const HomeScreen(initialTabIndex: 3)),
-                  );
-                }
-                return;
-              }
-
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => HomeScreen(initialTabIndex: index)),
-              );
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.pets),
-                label: 'Animals',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline),
-                label: 'Chat',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.menu),
-                label: 'More',
-              ),
-            ],
-            selectedItemColor: Colors.green,
-            unselectedItemColor: Colors.grey,
-            showUnselectedLabels: true,
-          ),
         );
       },
     );

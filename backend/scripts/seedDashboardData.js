@@ -116,20 +116,27 @@ async function seedFarmDashboardData(farm) {
   let treatments = 0;
   let gestations = 0;
 
-  const reminderTitles = [
-    'Vaccination follow-up',
-    'Nutrition check',
-    'Evening barn walkthrough',
+  const reminderPlans = [
+    { title: 'Vaccination follow-up', dayOffset: 0, hour: 9, minute: 0 },
+    { title: 'Nutrition check', dayOffset: 0, hour: 12, minute: 0 },
+    { title: 'Evening barn walkthrough', dayOffset: 0, hour: 17, minute: 30 },
+    { title: 'Water system inspection', dayOffset: 1, hour: 8, minute: 30 },
+    { title: 'Feed stock reorder', dayOffset: 1, hour: 15, minute: 0 },
+    { title: 'Animal weight check', dayOffset: 2, hour: 10, minute: 15 },
+    { title: 'Deworming reminder', dayOffset: 3, hour: 9, minute: 45 },
+    { title: 'Vet call prep', dayOffset: 4, hour: 14, minute: 0 },
   ];
 
-  for (let i = 0; i < reminderTitles.length; i += 1) {
+  for (let i = 0; i < reminderPlans.length; i += 1) {
+    const plan = reminderPlans[i];
+    const reminderDate = new Date(today.getTime() + plan.dayOffset * DAY_MS);
     await prisma.reminder.create({
       data: {
         userId: farm.userId,
         farmId: farm.id,
-        title: reminderTitles[i],
-        date: atTime(today, 9 + i * 3, 0),
-        notes: `${SEED_MARKER} ${reminderTitles[i]}`,
+        title: plan.title,
+        date: atTime(reminderDate, plan.hour, plan.minute),
+        notes: `${SEED_MARKER} ${plan.title}`,
       },
     });
     reminders += 1;
