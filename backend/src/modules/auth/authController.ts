@@ -278,7 +278,7 @@ export class AuthController {
 
   async getCurrentUserFirebase(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.uid || (req as any).user?.userId;
       if (!userId) {
         res.status(401).json({
           success: false,
@@ -304,7 +304,7 @@ export class AuthController {
 
   async updateProfileFirebase(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).user?.userId;
+      const userId = (req as any).user?.uid || (req as any).user?.userId;
       if (!userId) {
         res.status(401).json({
           success: false,

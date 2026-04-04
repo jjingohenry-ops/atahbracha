@@ -252,12 +252,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     final farmId = settingsProvider.activeFarmId;
-
-    await dashboardProvider.fetchDashboardData(farmId: farmId);
-    await animalsProvider.fetchAnimals(farmId: farmId);
-
-    final targetDate = remindersProvider.selectedDate ?? DateTime.now();
-    await remindersProvider.fetchReminders(date: targetDate, farmId: farmId);
+    await Future.wait(<Future<void>>[
+      dashboardProvider.fetchDashboardData(farmId: farmId),
+      animalsProvider.fetchAnimals(farmId: farmId),
+      remindersProvider.fetchReminders(farmId: farmId),
+    ]);
   }
 
   Future<void> _onFarmChanged(String? farmId) async {
@@ -530,10 +529,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         setState(() {
                           _selectedTabIndex = index;
                         });
-
-                        if (index == 0) {
-                          _refreshFarmScopedData();
-                        }
                       },
                       borderRadius: BorderRadius.circular(10),
                       child: Padding(

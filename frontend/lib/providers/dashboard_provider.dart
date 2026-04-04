@@ -57,15 +57,84 @@ class DashboardProvider extends ChangeNotifier {
         queryParameters: farmId != null && farmId.isNotEmpty ? {'farmId': farmId} : null,
       );
 
-      final response = await http.get(
+      http.Response response = await http.get(
         uri,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
+
+      if (response.statusCode == 403 && farmId != null && farmId.isNotEmpty) {
+        response = await http.get(
+          ApiBase.uri('/dashboard'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+      }
+
       if (response.statusCode == 200) {
-        final dynamic data = json.decode(response.body);
+        dynamic data = json.decode(response.body);
+
+        final bool hasFarmFilter = farmId != null && farmId.isNotEmpty;
+        final Map<String, dynamic> responseStats =
+            (data['stats'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+        final int totalAnimals = (responseStats['totalAnimals'] as num?)?.toInt() ?? 0;
+        final List<dynamic> activitySeries =
+            (data['trends']?['activity'] as List<dynamic>?) ?? <dynamic>[];
+        final List<dynamic> milkSeries =
+            (data['trends']?['milk'] as List<dynamic>?) ?? <dynamic>[];
+        final bool hasAnyActivity = activitySeries.any(
+          (dynamic item) =>
+              item is Map && ((item['count'] as num?)?.toDouble() ?? 0) > 0,
+        );
+        final bool hasAnyMilk = milkSeries.any(
+          (dynamic item) =>
+              item is Map && ((item['liters'] as num?)?.toDouble() ?? 0) > 0,
+        );
+
+        final bool looksEmpty =
+            totalAnimals <= 0 && !hasAnyActivity && !hasAnyMilk;
+
+        if (hasFarmFilter && looksEmpty) {
+          final http.Response fallbackResponse = await http.get(
+            ApiBase.uri('/dashboard'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          );
+
+          if (fallbackResponse.statusCode == 200) {
+            final dynamic fallbackData = json.decode(fallbackResponse.body);
+            final Map<String, dynamic> fallbackStats =
+                (fallbackData['stats'] as Map<String, dynamic>?) ??
+                    <String, dynamic>{};
+            final int fallbackTotalAnimals =
+                (fallbackStats['totalAnimals'] as num?)?.toInt() ?? 0;
+            final List<dynamic> fallbackActivitySeries =
+                (fallbackData['trends']?['activity'] as List<dynamic>?) ??
+                    <dynamic>[];
+            final List<dynamic> fallbackMilkSeries =
+                (fallbackData['trends']?['milk'] as List<dynamic>?) ??
+                    <dynamic>[];
+            final bool fallbackHasActivity = fallbackActivitySeries.any(
+              (dynamic item) =>
+                  item is Map && ((item['count'] as num?)?.toDouble() ?? 0) > 0,
+            );
+            final bool fallbackHasMilk = fallbackMilkSeries.any(
+              (dynamic item) =>
+                  item is Map && ((item['liters'] as num?)?.toDouble() ?? 0) > 0,
+            );
+
+            if (fallbackTotalAnimals > 0 || fallbackHasActivity || fallbackHasMilk) {
+              data = fallbackData;
+            }
+          }
+        }
+
         stats = data['stats'];
         aiInsights = data['aiInsights'];
         alerts = data['alerts'];

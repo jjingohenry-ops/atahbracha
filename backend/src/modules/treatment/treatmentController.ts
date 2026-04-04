@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { resolveDatabaseUserId } from '../../utils/resolveDatabaseUserId';
 
 const prisma = new PrismaClient();
 
@@ -7,7 +8,7 @@ console.log('🔍 Treatment controller module loaded');
 
 export const getReminders = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -35,6 +36,10 @@ export const getReminders = async (req: Request, res: Response) => {
       const start = new Date(new Date(parsed).setHours(0, 0, 0, 0));
       const end = new Date(new Date(parsed).setHours(23, 59, 59, 999));
       whereClause.date = { gte: start, lte: end };
+    } else {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      whereClause.date = { gte: start };
     }
     const reminders = await (prisma as any).reminder.findMany({
       where: whereClause,
@@ -48,7 +53,7 @@ export const getReminders = async (req: Request, res: Response) => {
 
 export const addReminder = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -87,7 +92,7 @@ export const addReminder = async (req: Request, res: Response) => {
 
 export const completeReminder = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }

@@ -10,6 +10,7 @@
     "test": "npm run build && node scripts/smoke.test.js",
     "seed:dashboard": "node scripts/seedDashboardData.js",
     "seed:dashboard:local": "node -r dotenv/config scripts/seedDashboardData.js dotenv_config_path=.env.local",
+    "seed:insurance": "node scripts/seedInsuranceProviders.js",
     "clean": "rm -rf dist",
     "rebuild": "npm run clean && npm run build"
   },

@@ -71,6 +71,7 @@ model Animal {
   feedingLogs FeedingLog[]
   gestations  Gestation[]
   treatments  Treatment[]
+  prescriptions Prescription[]
   cautionNotes CautionNote[]
   dailyActivities DailyActivity[]
 
@@ -89,6 +90,8 @@ model FeedingLog {
 
   animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
+  @@index([animalId, time])
+
   @@map("feeding_logs")
 }
 
@@ -105,6 +108,8 @@ model Gestation {
 
   animal       Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
+  @@index([animalId, expectedDate])
+
   @@map("gestations")
 }
 
@@ -120,7 +125,74 @@ model Treatment {
 
   animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
+  @@index([animalId, date])
+
   @@map("treatments")
+}
+
+model Prescription {
+  id          String   @id @default(cuid())
+  animalId    String
+  diagnosis   String
+  vetName     String?
+  notes       String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastSyncAt  DateTime?
+
+  animal      Animal              @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  items       PrescriptionItem[]
+  treatmentLogs TreatmentLog[]
+
+  @@index([animalId, createdAt])
+
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id                  String   @id @default(cuid())
+  prescriptionId      String
+  drugName            String
+  dosage              String
+  frequencyPerDay     Int
+  durationDays        Int
+  withdrawalPeriodDays Int?
+  startDate           DateTime
+  totalDoses          Int
+  completedDoses      Int      @default(0)
+  nextDoseAt          DateTime?
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  prescription        Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  treatmentLogs       TreatmentLog[]
+
+  @@index([prescriptionId])
+  @@index([status, nextDoseAt])
+
+  @@map("prescription_items")
+}
+
+model TreatmentLog {
+  id               String   @id @default(cuid())
+  prescriptionId   String
+  itemId           String
+  givenAt          DateTime
+  scheduledFor     DateTime?
+  givenBy          String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  syncedFromOffline Boolean @default(false)
+
+  prescription     Prescription    @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  item             PrescriptionItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, givenAt])
+  @@index([prescriptionId, givenAt])
+
+  @@map("treatment_logs")
 }
 
 model Reminder {
@@ -139,6 +211,8 @@ model Reminder {
 
   @@index([userId])
   @@index([farmId])
+  @@index([userId, date])
+  @@index([farmId, date])
 
   @@map("reminders")
 }
@@ -165,6 +239,8 @@ model DailyActivity {
   lastSyncAt  DateTime?
 
   animal      Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([animalId, time])
 
   @@map("daily_activities")
 }
@@ -239,6 +315,51 @@ model ChatMessage {
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("chat_messages")
+}
+
+model InsuranceProvider {
+  id            String                      @id
+  name          String
+  country       String
+  phone         String?
+  whatsapp      String?
+  website       String?
+  email         String?
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+
+  animalTypes   InsuranceProviderAnimalType[]
+  coverageInfo  InsuranceCoverageInfo[]
+
+  @@map("insurance_providers")
+}
+
+model InsuranceProviderAnimalType {
+  id          String            @id
+  providerId  String
+  animalType  String
+  createdAt   DateTime          @default(now())
+
+  provider    InsuranceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, animalType])
+  @@index([animalType])
+  @@map("insurance_provider_animal_types")
+}
+
+model InsuranceCoverageInfo {
+  id              String            @id
+  providerId      String
+  animalType      String
+  coverageSummary String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  provider        InsuranceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, animalType])
+  @@index([animalType])
+  @@map("insurance_coverage_info")
 }
 
 enum Role {

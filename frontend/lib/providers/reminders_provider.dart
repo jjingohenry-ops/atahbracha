@@ -35,7 +35,7 @@ class RemindersProvider extends ChangeNotifier {
           if (farmId != null && farmId.isNotEmpty) 'farmId': farmId,
         },
       );
-      final response = await http.get(
+      http.Response response = await http.get(
         uri,
         headers: {
           'Authorization': 'Bearer $token',
@@ -45,9 +45,68 @@ class RemindersProvider extends ChangeNotifier {
         const Duration(seconds: 10),
         onTimeout: () => throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
       );
+
+      if (response.statusCode == 403 && farmId != null && farmId.isNotEmpty) {
+        final fallbackUri = ApiBase.uri(
+          '/reminders',
+          queryParameters: {
+            if (date != null) 'date': date.toIso8601String().split('T').first,
+          },
+        );
+
+        response = await http.get(
+          fallbackUri,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
+        );
+      }
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        reminders = List<Map<String, dynamic>>.from(data['data'] ?? []);
+        dynamic data = json.decode(response.body);
+        List<Map<String, dynamic>> fetched = List<Map<String, dynamic>>.from(
+          data['data'] ?? <Map<String, dynamic>>[],
+        );
+
+        final bool hasFarmFilter = farmId != null && farmId.isNotEmpty;
+        if (hasFarmFilter && fetched.isEmpty) {
+          final fallbackUri = ApiBase.uri(
+            '/reminders',
+            queryParameters: {
+              if (date != null) 'date': date.toIso8601String().split('T').first,
+            },
+          );
+
+          final fallbackResponse = await http.get(
+            fallbackUri,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          ).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () =>
+                throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
+          );
+
+          if (fallbackResponse.statusCode == 200) {
+            final dynamic fallbackData = json.decode(fallbackResponse.body);
+            final List<Map<String, dynamic>> fallbackFetched =
+                List<Map<String, dynamic>>.from(
+              fallbackData['data'] ?? <Map<String, dynamic>>[],
+            );
+            if (fallbackFetched.isNotEmpty) {
+              data = fallbackData;
+              fetched = fallbackFetched;
+            }
+          }
+        }
+
+        reminders = fetched;
         error = null; // No error if we got data (even if empty array)
       } else if (response.statusCode >= 500) {
         error = 'Oops! Server error. Please try again later.';

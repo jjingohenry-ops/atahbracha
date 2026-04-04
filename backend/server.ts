@@ -16,6 +16,27 @@ import { chatRoutes } from './src/modules/chat/chatRoutes';
 
 const app = express();
 
+// Prevent stale API payloads due to browser ETag/304 behavior.
+app.set('etag', false);
+
+const shouldSkipRequestLog = (req: express.Request, res: express.Response): boolean => {
+  const requestPath = req.path || req.originalUrl || '';
+
+  if (res.statusCode === 304) {
+    return true;
+  }
+
+  if (requestPath.startsWith('/api/chat/conversations')) {
+    return true;
+  }
+
+  if (requestPath.startsWith('/api/auth/firebase')) {
+    return true;
+  }
+
+  return false;
+};
+
 // Security middleware
 app.use(helmet());
 
@@ -28,15 +49,22 @@ app.use(cors({
 // Compression middleware
 app.use(compression());
 
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
 if (config.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+  app.use(morgan('dev', { skip: shouldSkipRequestLog }));
 } else {
-  app.use(morgan('combined'));
+  app.use(morgan('combined', { skip: shouldSkipRequestLog }));
 }
 
 // Static file serving

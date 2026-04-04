@@ -292,12 +292,15 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: provider.conversations.length,
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: _openNewChatDialog,
-            icon: const Icon(Icons.add_comment),
-            label: const Text('New Chat'),
-            backgroundColor: const Color(0xFF13EC5B),
-            foregroundColor: Colors.black87,
+          floatingActionButton: Padding(
+            padding: const EdgeInsets.only(bottom: 56),
+            child: FloatingActionButton.extended(
+              onPressed: _openNewChatDialog,
+              icon: const Icon(Icons.add_comment),
+              label: const Text('New Chat'),
+              backgroundColor: const Color(0xFF13EC5B),
+              foregroundColor: Colors.black87,
+            ),
           ),
         );
       },

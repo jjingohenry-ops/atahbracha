@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient, GestationStatus } from '@prisma/client';
+import { resolveDatabaseUserId } from '../../utils/resolveDatabaseUserId';
 
 const prisma = new PrismaClient();
 
@@ -53,7 +54,7 @@ const ensureAnimalOwnership = async (
 
 export const recordTreatment = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -109,7 +110,7 @@ export const recordTreatment = async (req: Request, res: Response) => {
 
 export const logFeeding = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -165,7 +166,7 @@ export const logFeeding = async (req: Request, res: Response) => {
 
 export const recordPregnancy = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -224,7 +225,7 @@ export const recordPregnancy = async (req: Request, res: Response) => {
 
 export const addActivity = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -266,7 +267,7 @@ export const addActivity = async (req: Request, res: Response) => {
 
 export const scanTag = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -322,7 +323,7 @@ export const scanTag = async (req: Request, res: Response) => {
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -337,62 +338,181 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     const now = new Date();
     const farmFilter = ownedFarmId ? { id: ownedFarmId, userId } : { userId };
+    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    const totalAnimals = await prisma.animal.count({
-      where: {
-        farm: farmFilter,
-      },
-    });
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
 
-    const pregnant = await prisma.gestation.count({
-      where: {
-        animal: {
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const trendStart = new Date(now);
+    trendStart.setDate(trendStart.getDate() - 6);
+    trendStart.setHours(0, 0, 0, 0);
+
+    const [
+      totalAnimals,
+      pregnant,
+      sick,
+      upcomingTasks,
+      upcomingGestations,
+      nextFeeding,
+      upcomingVaccinations,
+      pendingTreatments,
+      dueTodayBreedingCycles,
+      recentActivity,
+      recentTrendActivities,
+      animalSnapshot,
+    ] = await Promise.all([
+      prisma.animal.count({
+        where: {
           farm: farmFilter,
         },
-        OR: [
-          { status: GestationStatus.PENDING },
-          { status: GestationStatus.IN_PROGRESS },
-        ],
-      },
-    });
-
-    const sick = await prisma.animal.count({
-      where: {
-        farm: farmFilter,
-        treatments: {
-          some: {
-            date: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      }),
+      prisma.gestation.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          OR: [
+            { status: GestationStatus.PENDING },
+            { status: GestationStatus.IN_PROGRESS },
+          ],
+        },
+      }),
+      prisma.animal.count({
+        where: {
+          farm: farmFilter,
+          treatments: {
+            some: {
+              date: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+              },
             },
           },
         },
-      },
-    });
-
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const upcomingTasks = await prisma.treatment.count({
-      where: {
-        animal: {
+      }),
+      prisma.treatment.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          date: {
+            gte: now,
+            lte: nextWeek,
+          },
+        },
+      }),
+      prisma.gestation.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          expectedDate: {
+            gte: now,
+            lte: nextWeek,
+          },
+        },
+      }),
+      prisma.feedingLog.findFirst({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          time: {
+            gte: now,
+          },
+        },
+        orderBy: {
+          time: 'asc',
+        },
+        include: {
+          animal: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+      prisma.treatment.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          date: {
+            gte: now,
+            lte: nextWeek,
+          },
+          OR: [
+            { drugName: { contains: 'vacc', mode: 'insensitive' } },
+            { notes: { contains: 'vacc', mode: 'insensitive' } },
+          ],
+        },
+      }),
+      prisma.treatment.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          date: { gte: now },
+        },
+      }),
+      prisma.gestation.count({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          expectedDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+      }),
+      prisma.dailyActivity.findMany({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+        },
+        orderBy: { time: 'desc' },
+        take: 2,
+        include: { animal: true },
+      }),
+      prisma.dailyActivity.findMany({
+        where: {
+          animal: {
+            farm: farmFilter,
+          },
+          time: {
+            gte: trendStart,
+            lte: now,
+          },
+        },
+        select: {
+          time: true,
+          notes: true,
+        },
+      }),
+      prisma.animal.findMany({
+        where: {
           farm: farmFilter,
         },
-        date: {
-          gte: now,
-          lte: nextWeek,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          gestations: {
+            where: {
+              OR: [
+                { status: GestationStatus.PENDING },
+                { status: GestationStatus.IN_PROGRESS },
+              ],
+            },
+            orderBy: { expectedDate: 'asc' },
+            take: 1,
+          },
         },
-      },
-    });
-
-    const upcomingGestations = await prisma.gestation.count({
-      where: {
-        animal: {
-          farm: farmFilter,
-        },
-        expectedDate: {
-          gte: now,
-          lte: nextWeek,
-        },
-      },
-    });
+      }),
+    ]);
 
     const aiInsights = {
       message: [
@@ -403,60 +523,10 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       ].join(' '),
     };
 
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const nextFeeding = await prisma.feedingLog.findFirst({
-      where: {
-        animal: {
-          farm: farmFilter,
-        },
-        time: {
-          gte: now,
-        },
-      },
-      orderBy: {
-        time: 'asc',
-      },
-      include: {
-        animal: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
-
-    const upcomingVaccinations = await prisma.treatment.count({
-      where: {
-        animal: {
-          farm: farmFilter,
-        },
-        date: {
-          gte: now,
-          lte: nextWeek,
-        },
-        OR: [
-          { drugName: { contains: 'vacc', mode: 'insensitive' } },
-          { notes: { contains: 'vacc', mode: 'insensitive' } },
-        ],
-      },
-    });
-
     const alerts = [
       {
         type: 'Treatments',
-        count: await prisma.treatment.count({
-          where: {
-            animal: {
-              farm: farmFilter,
-            },
-            date: { gte: now },
-          },
-        }),
+        count: pendingTreatments,
         label: 'pending tasks',
       },
       {
@@ -467,17 +537,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       },
       {
         type: 'Breeding Cycles',
-        count: await prisma.gestation.count({
-          where: {
-            animal: {
-              farm: farmFilter,
-            },
-            expectedDate: {
-              gte: startOfDay,
-              lte: endOfDay,
-            },
-          },
-        }),
+        count: dueTodayBreedingCycles,
         label: 'due today',
       },
       {
@@ -486,37 +546,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         label: 'scheduled in 7 days',
       },
     ];
-
-    const recentActivity = await prisma.dailyActivity.findMany({
-      where: {
-        animal: {
-          farm: farmFilter,
-        },
-      },
-      orderBy: { time: 'desc' },
-      take: 2,
-      include: { animal: true },
-    });
-
-    const trendStart = new Date(now);
-    trendStart.setDate(trendStart.getDate() - 6);
-    trendStart.setHours(0, 0, 0, 0);
-
-    const recentTrendActivities = await prisma.dailyActivity.findMany({
-      where: {
-        animal: {
-          farm: farmFilter,
-        },
-        time: {
-          gte: trendStart,
-          lte: now,
-        },
-      },
-      select: {
-        time: true,
-        notes: true,
-      },
-    });
 
     const activityTrend = Array.from({ length: 7 }, (_unused, index) => {
       const date = new Date(trendStart);
@@ -557,26 +586,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         day: dayStart.toISOString().split('T')[0],
         liters: Number(total.toFixed(2)),
       };
-    });
-
-    const animalSnapshot = await prisma.animal.findMany({
-      where: {
-        farm: farmFilter,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: {
-        gestations: {
-          where: {
-            OR: [
-              { status: GestationStatus.PENDING },
-              { status: GestationStatus.IN_PROGRESS },
-            ],
-          },
-          orderBy: { expectedDate: 'asc' },
-          take: 1,
-        },
-      },
     });
 
     res.json({

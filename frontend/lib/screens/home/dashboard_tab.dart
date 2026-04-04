@@ -86,12 +86,13 @@ class _DashboardTabState extends State<DashboardTab> {
           Provider.of<RemindersProvider>(context, listen: false);
 
       final String? farmId = settingsProvider.activeFarmId;
-      await dashboardProvider.fetchDashboardData(farmId: farmId);
-      await animalsProvider.fetchAnimals(farmId: farmId);
-      await remindersProvider.fetchReminders(
-        date: remindersProvider.selectedDate ?? DateTime.now(),
-        farmId: farmId,
-      );
+      await Future.wait(<Future<void>>[
+        dashboardProvider.fetchDashboardData(farmId: farmId),
+        animalsProvider.fetchAnimals(farmId: farmId),
+        remindersProvider.fetchReminders(
+          farmId: farmId,
+        ),
+      ]);
     } finally {
       if (mounted) {
         setState(() {
@@ -973,12 +974,13 @@ class _DashboardTabState extends State<DashboardTab> {
                           )
                           .toList(),
                       onChanged: (String? value) async {
-                        await settingsProvider.selectActiveFarm(value);
                         if (widget.onFarmChanged != null) {
                           await widget.onFarmChanged!(value);
-                        }
-                        if (mounted) {
-                          await _refreshAll();
+                        } else {
+                          await settingsProvider.selectActiveFarm(value);
+                          if (mounted) {
+                            await _refreshAll();
+                          }
                         }
                       },
                     ),
@@ -1124,7 +1126,18 @@ class _DashboardTabState extends State<DashboardTab> {
             ],
           ),
           const SizedBox(height: 8),
-          if (reminders.isEmpty)
+          if (remindersProvider.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.3),
+                ),
+              ),
+            )
+          else if (reminders.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text(
@@ -1233,7 +1246,7 @@ class _DashboardTabState extends State<DashboardTab> {
     return points;
   }
 
-  Widget _buildActivityGraph(List<dynamic> series) {
+  Widget _buildActivityGraph(List<dynamic> series, {required bool isLoading}) {
     final List<_ChartPoint> points = _extractChartPoints(series, 'count');
     final double total = points.fold<double>(
       0,
@@ -1264,7 +1277,15 @@ class _DashboardTabState extends State<DashboardTab> {
           const SizedBox(height: 10),
           SizedBox(
             height: 120,
-            child: points.isEmpty
+            child: isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.3),
+                    ),
+                  )
+                : points.isEmpty
                 ? const Center(
                     child: Text(
                       'No data available',
@@ -1298,7 +1319,7 @@ class _DashboardTabState extends State<DashboardTab> {
     );
   }
 
-  Widget _buildMilkGraph(List<dynamic> series) {
+  Widget _buildMilkGraph(List<dynamic> series, {required bool isLoading}) {
     final List<_ChartPoint> points = _extractChartPoints(series, 'liters');
     final double total = points.fold<double>(
       0,
@@ -1329,7 +1350,15 @@ class _DashboardTabState extends State<DashboardTab> {
           const SizedBox(height: 10),
           SizedBox(
             height: 120,
-            child: points.isEmpty
+            child: isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.3),
+                    ),
+                  )
+                : points.isEmpty
                 ? const Center(
                     child: Text(
                       'No data available',
@@ -1648,9 +1677,19 @@ class _DashboardTabState extends State<DashboardTab> {
               const SizedBox(height: 14),
               Row(
                 children: <Widget>[
-                  Expanded(child: _buildActivityGraph(activitySeries)),
+                  Expanded(
+                    child: _buildActivityGraph(
+                      activitySeries,
+                      isLoading: dashboardProvider.isLoading,
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildMilkGraph(milkSeries)),
+                  Expanded(
+                    child: _buildMilkGraph(
+                      milkSeries,
+                      isLoading: dashboardProvider.isLoading,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
