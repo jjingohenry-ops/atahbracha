@@ -1,10 +1,12 @@
 # Backend production image for monorepo layout.
-FROM node:18-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app/backend
 
-# curl is used by the container healthcheck.
-RUN apk add --no-cache curl
+# curl is used by the container healthcheck; openssl is required by Prisma engine.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install backend dependencies first for better build caching.
 COPY backend/package*.json ./
