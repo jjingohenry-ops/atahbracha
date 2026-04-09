@@ -170,19 +170,30 @@ Update `frontend/lib/firebase_options.dart` with your Firebase configuration.
 
 ## 🚀 Deployment
 
-### Backend Deployment
+### Backend Deployment (AWS ECS + ECR)
 ```bash
-cd backend
-npm run build
-npm run start
+AWS_PROFILE=atahbracha-admin \
+AWS_REGION=us-east-1 \
+ECR_REPOSITORY=atahbracha-api \
+ECS_CLUSTER=atahbracha-prod \
+ECS_SERVICE=atahbracha-api \
+ECS_TASK_FAMILY=atahbracha-api \
+ECS_CONTAINER_NAME=api \
+./scripts/deploy_backend_ecs.sh
 ```
 
-### Frontend Deployment
+### Frontend Deployment (S3 + CloudFront)
 ```bash
-cd frontend
-flutter build web --release
-# Deploy dist/ folder to web server
+AWS_PROFILE=atahbracha-admin \
+AWS_REGION=us-east-1 \
+FRONTEND_BUCKET=atahbracha-web-prod \
+CLOUDFRONT_DISTRIBUTION_ID=E123456789ABC \
+./scripts/deploy_frontend_cloudfront.sh
 ```
+
+Detailed production steps are in `DEPLOYMENT_RUNBOOK.md`.
+
+CI/CD workflows are in `.github/workflows` and can auto-deploy from `main`.
 
 ### Docker Deployment
 ```bash
