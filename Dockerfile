@@ -8,7 +8,7 @@ RUN apk add --no-cache curl
 
 # Install backend dependencies first for better build caching.
 COPY backend/package*.json ./
-RUN npm install --omit=dev
+RUN npm install
 
 # Copy backend source.
 COPY backend ./
@@ -16,6 +16,7 @@ COPY backend ./
 # Generate Prisma client and compile TypeScript.
 RUN npx prisma generate
 RUN npm run build
+RUN npm prune --omit=dev
 
 # Ensure upload directories exist at runtime.
 RUN mkdir -p src/public/uploads src/public/images src/public/videos
