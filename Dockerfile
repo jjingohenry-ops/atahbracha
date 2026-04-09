@@ -8,7 +8,7 @@ RUN apk add --no-cache curl
 
 # Install backend dependencies first for better build caching.
 COPY backend/package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy backend source.
 COPY backend ./
