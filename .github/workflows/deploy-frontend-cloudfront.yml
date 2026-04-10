@@ -48,7 +48,23 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$FRONTEND_BUCKET"
-          aws s3 sync frontend/build/web/ "s3://${FRONTEND_BUCKET}/" --delete
+          # Sync most files with normal caching (assets usually have hashes)
+          aws s3 sync frontend/build/web/ "s3://${FRONTEND_BUCKET}/" --delete \
+            --exclude "index.html" --exclude "flutter_service_worker.js" --exclude "version.json"
+          
+          # Sync entry point and service worker with strong no-cache headers so browsers instantly see updates
+          aws s3 cp frontend/build/web/index.html "s3://${FRONTEND_BUCKET}/index.html" \
+            --cache-control "max-age=0, no-cache, no-store, must-revalidate"
+          
+          if [ -f "frontend/build/web/flutter_service_worker.js" ]; then
+            aws s3 cp frontend/build/web/flutter_service_worker.js "s3://${FRONTEND_BUCKET}/flutter_service_worker.js" \
+              --cache-control "max-age=0, no-cache, no-store, must-revalidate"
+          fi
+          
+          if [ -f "frontend/build/web/version.json" ]; then
+            aws s3 cp frontend/build/web/version.json "s3://${FRONTEND_BUCKET}/version.json" \
+              --cache-control "max-age=0, no-cache, no-store, must-revalidate"
+          fi
 
       - name: Invalidate CloudFront cache
         run: |
