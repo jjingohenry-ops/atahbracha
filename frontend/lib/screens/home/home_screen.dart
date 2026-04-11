@@ -11,10 +11,10 @@ import '../../providers/reminders_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../animals/add_animal_modal.dart';
 import '../animals/animals_screen.dart';
+import '../ai/ai_chat_screen.dart';
 import '../auth/login_screen.dart';
 import '../chat/chat_screen.dart';
 import '../marketing/marketing_screen.dart';
-import '../reminders/reminders_screen.dart';
 import '../settings/settings_screen.dart';
 import 'dashboard_tab.dart';
 
@@ -288,6 +288,15 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
+  Future<void> _openAiChat() async {
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<Widget>(
+        builder: (_) => const AiChatScreen(),
+      ),
+    );
+  }
+
   Widget _buildTopFarmDropdown(SettingsProvider settingsProvider) {
     final farms = _farmOptions(settingsProvider);
     final selectedFarmId = settingsProvider.activeFarmId;
@@ -453,27 +462,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-          floatingActionButton: _selectedTabIndex == 1
-              ? FloatingActionButton(
-                  onPressed: () async {
-                    final saved = await showModalBottomSheet<bool>(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const AddAnimalModal(),
-                    );
+          floatingActionButton: user == null
+              ? null
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (_selectedTabIndex == 1)
+                      FloatingActionButton(
+                        heroTag: 'add-animal-fab',
+                        onPressed: () async {
+                          final saved = await showModalBottomSheet<bool>(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => const AddAnimalModal(),
+                          );
 
-                    if (!mounted || saved != true) return;
-                    await Provider.of<AnimalsProvider>(
-                      context,
-                      listen: false,
-                    ).fetchAnimals(farmId: settingsProvider.activeFarmId);
-                  },
-                  backgroundColor: const Color(0xFF13EC5B),
-                  foregroundColor: Colors.black87,
-                  child: const Icon(Icons.add),
-                )
-              : null,
+                          if (!mounted || saved != true) return;
+                          await Provider.of<AnimalsProvider>(
+                            context,
+                            listen: false,
+                          ).fetchAnimals(farmId: settingsProvider.activeFarmId);
+                        },
+                        backgroundColor: const Color(0xFF13EC5B),
+                        foregroundColor: Colors.black87,
+                        child: const Icon(Icons.add),
+                      ),
+                    if (_selectedTabIndex == 1) const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      heroTag: 'ai-chat-fab',
+                      onPressed: _openAiChat,
+                      backgroundColor: const Color(0xFF13EC5B),
+                      foregroundColor: Colors.black87,
+                      child: const Icon(Icons.smart_toy_outlined, size: 18),
+                    ),
+                  ],
+                ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           bottomNavigationBar: _buildBottomNavigationBar(),
         );
