@@ -39,20 +39,28 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
       });
     }
 
-    // Format messages for DeepSeek v3.2
-    const formattedMessages = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // Anthropic Messages API expects text content blocks and user/assistant roles.
+    const formattedMessages = messages
+      .filter((msg: any) => (msg?.role === 'user' || msg?.role === 'assistant'))
+      .map((msg: any) => ({
+        role: msg.role,
+        content: [
+          {
+            type: 'text',
+            text: String(msg?.content ?? ''),
+          },
+        ],
+      }));
 
     const bedrockRequest = {
-      modelId: config.BEDROCK_MODEL_ID || 'deepseek.v3.2',
+      modelId: config.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-haiku-20241022-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
+        anthropic_version: 'bedrock-2023-05-31',
         messages: formattedMessages,
         system: systemPrompt || 'You are a helpful assistant.',
-        max_tokens: 2048,
+        max_tokens: 1200,
         temperature: 0.7,
         top_p: 0.95,
       }),
@@ -69,7 +77,9 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
 
     // Extract the text from the response
     const assistantMessage =
-      responseBody?.content?.[0]?.text || responseBody?.output?.message?.content || '';
+      responseBody?.content?.find((item: any) => item?.type === 'text')?.text ||
+      responseBody?.output?.message?.content?.find((item: any) => item?.type === 'text')?.text ||
+      '';
 
     res.json({
       success: true,
@@ -89,7 +99,7 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
         message: error.message,
         credentialSource: useEnvCredentials ? 'explicit-env-credentials' : 'default-provider-chain',
         region: config.AWS_REGION || 'us-east-1',
-        modelId: config.BEDROCK_MODEL_ID || 'deepseek.v3.2',
+        modelId: config.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-haiku-20241022-v1:0',
       },
     });
   }

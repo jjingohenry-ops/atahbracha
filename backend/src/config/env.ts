@@ -34,7 +34,7 @@ const config = {
   AWS_SECRET_ACCESS_KEY: process.env['AWS_SECRET_ACCESS_KEY'],
   AWS_SESSION_TOKEN: process.env['AWS_SESSION_TOKEN'],
   BEDROCK_USE_ENV_CREDENTIALS: process.env['BEDROCK_USE_ENV_CREDENTIALS'] || 'false',
-  BEDROCK_MODEL_ID: process.env['BEDROCK_MODEL_ID'] || 'deepseek.v3.2',
+  BEDROCK_MODEL_ID: process.env['BEDROCK_MODEL_ID'] || 'anthropic.claude-3-5-haiku-20241022-v1:0',
   AWS_S3_BUCKET: process.env['AWS_S3_BUCKET'],
   AWS_CLOUDFRONT_URL: process.env['AWS_CLOUDFRONT_URL'],
 
