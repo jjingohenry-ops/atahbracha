@@ -54,7 +54,7 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
 
     const bedrockRequest = {
       modelId:
-        config.BEDROCK_MODEL_ID || 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
+        config.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify({
@@ -101,7 +101,7 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
         credentialSource: useEnvCredentials ? 'explicit-env-credentials' : 'default-provider-chain',
         region: config.AWS_REGION || 'us-east-1',
         modelId:
-          config.BEDROCK_MODEL_ID || 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
+          config.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
       },
     });
   }
