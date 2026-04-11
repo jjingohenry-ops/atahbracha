@@ -6,6 +6,7 @@ import '../../providers/animals_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../ai/ai_chat_screen.dart';
 import '../animals/add_animal_modal.dart';
 import '../reminders/reminders_screen.dart';
 
@@ -115,6 +116,17 @@ class _DashboardTabState extends State<DashboardTab> {
     }
 
     await _refreshAll();
+  }
+
+  Future<void> _openAiChat() async {
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<Widget>(
+        builder: (_) => const AiChatScreen(),
+      ),
+    );
   }
 
   Future<void> _showResultSnack({
@@ -1398,6 +1410,11 @@ class _DashboardTabState extends State<DashboardTab> {
         'label': 'Add Animal',
         'icon': Icons.pets,
         'onTap': _openAddAnimalModal,
+      },
+      <String, dynamic>{
+        'label': 'AI Chat',
+        'icon': Icons.smart_toy_outlined,
+        'onTap': _openAiChat,
       },
       <String, dynamic>{
         'label': 'Record Treatment',

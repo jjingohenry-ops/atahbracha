@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 class ApiBase {
+  static const String _prodFallbackOrigin =
+      'http://atahbracha-alb-2058683693.us-east-1.elb.amazonaws.com';
+
   static String get origin {
     const configured = String.fromEnvironment('API_ORIGIN');
     if (configured.isNotEmpty) {
@@ -13,6 +16,9 @@ class ApiBase {
       if (isLoopback) {
         final scheme = current.scheme.isEmpty ? 'http' : current.scheme;
         return '$scheme://${current.host}:3000';
+      }
+      if (current.host == 'atahbracha.com' || current.host == 'www.atahbracha.com') {
+        return _prodFallbackOrigin;
       }
       return current.origin;
     }

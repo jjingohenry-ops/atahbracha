@@ -17,6 +17,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
   FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
   CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+  FRONTEND_API_ORIGIN: ${{ vars.FRONTEND_API_ORIGIN || 'http://atahbracha-alb-2058683693.us-east-1.elb.amazonaws.com' }}
 
 jobs:
   deploy:
@@ -36,7 +37,7 @@ jobs:
           set -euo pipefail
           cd frontend
           flutter pub get
-          flutter build web --release
+          flutter build web --release --dart-define=API_ORIGIN="$FRONTEND_API_ORIGIN"
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
