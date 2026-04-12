@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import '../core/network/api_base.dart';
+import '../core/utils/user_error_message.dart';
 
 class RemindersProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -43,7 +44,7 @@ class RemindersProvider extends ChangeNotifier {
         },
       ).timeout(
         const Duration(seconds: 10),
-        onTimeout: () => throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
+        onTimeout: () => throw TimeoutException('Connection timed out.'),
       );
 
       if (response.statusCode == 403 && farmId != null && farmId.isNotEmpty) {
@@ -62,7 +63,7 @@ class RemindersProvider extends ChangeNotifier {
           },
         ).timeout(
           const Duration(seconds: 10),
-          onTimeout: () => throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
+          onTimeout: () => throw TimeoutException('Connection timed out.'),
         );
       }
 
@@ -89,8 +90,7 @@ class RemindersProvider extends ChangeNotifier {
             },
           ).timeout(
             const Duration(seconds: 10),
-            onTimeout: () =>
-                throw TimeoutException('Connection timed out. Check if backend is running on port 3000.'),
+            onTimeout: () => throw TimeoutException('Connection timed out.'),
           );
 
           if (fallbackResponse.statusCode == 200) {
@@ -115,16 +115,10 @@ class RemindersProvider extends ChangeNotifier {
       } else {
         error = 'Oops! Unable to load reminders.';
       }
-    } on TimeoutException catch (e) {
-      error = e.message;
+    } on TimeoutException {
+      error = 'Request timed out. Please try again.';
     } catch (e) {
-      if (e.toString().contains('Connection refused')) {
-        error = 'Cannot connect to server. Is the backend running on port 3000?';
-      } else if (e.toString().contains('Network is unreachable')) {
-        error = 'No internet connection';
-      } else {
-        error = 'Error loading reminders: ${e.toString()}';
-      }
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load reminders right now. Please try again.');
     }
     isLoading = false;
     notifyListeners();
@@ -179,9 +173,9 @@ class RemindersProvider extends ChangeNotifier {
         error = 'Failed to add reminder';
       }
     } on TimeoutException {
-      error = 'Request timed out. Is the backend running?';
+      error = 'Request timed out. Please try again.';
     } catch (e) {
-      error = 'Error adding reminder: ${e.toString()}';
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to add reminder right now. Please try again.');
     }
     notifyListeners();
     return false;
@@ -226,10 +220,10 @@ class RemindersProvider extends ChangeNotifier {
       }
       return false;
     } on TimeoutException {
-      error = 'Request timed out. Is the backend running?';
+      error = 'Request timed out. Please try again.';
       return false;
     } catch (e) {
-      error = 'Error completing reminder: ${e.toString()}';
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to complete reminder right now. Please try again.');
       return false;
     } finally {
       isLoading = false;

@@ -2,11 +2,15 @@ import 'package:flutter/foundation.dart';
 
 class ApiBase {
   static const String _prodFallbackOrigin =
-      'http://atahbracha-alb-2058683693.us-east-1.elb.amazonaws.com';
+      'https://atahbracha.com';
 
   static String get origin {
     const configured = String.fromEnvironment('API_ORIGIN');
     if (configured.isNotEmpty) {
+      if (kIsWeb && Uri.base.scheme == 'https' && configured.startsWith('http://')) {
+        // Prevent mixed-content failures in production web builds.
+        return Uri.base.origin;
+      }
       return configured;
     }
 

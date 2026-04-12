@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/chat_models.dart';
 import '../services/chat_service.dart';
+import '../core/utils/user_error_message.dart';
 
 class ChatProvider extends ChangeNotifier {
   final ChatService _chatService = ChatService();
@@ -29,7 +30,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       conversations = await _chatService.getConversations();
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load chats right now. Please try again.');
     } finally {
       isLoadingConversations = false;
       notifyListeners();
@@ -63,7 +64,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       searchResults = await _chatService.searchUsers(trimmed);
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to search users right now. Please try again.');
       searchResults = <ChatUserPreview>[];
     } finally {
       isSearchingUsers = false;
@@ -84,7 +85,7 @@ class ChatProvider extends ChangeNotifier {
       await loadConversations(silent: true);
       return true;
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to start chat request right now. Please try again.');
       return false;
     } finally {
       isSending = false;
@@ -108,7 +109,7 @@ class ChatProvider extends ChangeNotifier {
       }
       return true;
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to respond to the request right now. Please try again.');
       return false;
     } finally {
       isSending = false;
@@ -126,7 +127,7 @@ class ChatProvider extends ChangeNotifier {
       activeConversationId = conversationId;
       activeMessages = await _chatService.getConversationMessages(conversationId);
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load messages right now. Please try again.');
     } finally {
       notifyListeners();
     }
@@ -155,7 +156,7 @@ class ChatProvider extends ChangeNotifier {
       await loadConversations(silent: true);
       return true;
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to send message right now. Please try again.');
       return false;
     } finally {
       isSending = false;

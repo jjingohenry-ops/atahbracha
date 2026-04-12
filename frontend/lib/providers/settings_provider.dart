@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../core/services/storage_service.dart';
 import '../core/network/api_base.dart';
+import '../core/utils/user_error_message.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _farmLocationsStorageKeyPrefix = 'farm_locations_cache';
@@ -229,7 +230,7 @@ class SettingsProvider extends ChangeNotifier {
         error = 'Failed to load profile';
       }
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load your profile right now. Please try again.');
     }
     isLoading = false;
     notifyListeners();
@@ -279,7 +280,7 @@ class SettingsProvider extends ChangeNotifier {
         _activeFarmId = previousActiveFarmId;
       }
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load farm locations right now. Please try again.');
       farmLocations = previousFarms;
       _activeFarmId = previousActiveFarmId;
     }
@@ -331,7 +332,7 @@ class SettingsProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to create farm right now. Please try again.');
       notifyListeners();
       return false;
     }

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../core/network/api_base.dart';
+import '../core/utils/user_error_message.dart';
 
 class AnimalsProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -14,8 +15,8 @@ class AnimalsProvider extends ChangeNotifier {
     try {
       final body = json.decode(response.body);
       final message = body['error'] ?? body['message'] ?? body['details']?['message'];
-      if (message is String && message.trim().isNotEmpty) {
-        return message;
+      if (message is String) {
+        return UserErrorMessage.sanitizeServerMessage(message, fallback: fallback);
       }
     } catch (_) {
       // Ignore JSON parse errors and use fallback message.
@@ -55,7 +56,7 @@ class AnimalsProvider extends ChangeNotifier {
         error = 'Failed to load animals';
       }
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to load animals right now. Please try again.');
     }
     isLoading = false;
     notifyListeners();
@@ -87,7 +88,7 @@ class AnimalsProvider extends ChangeNotifier {
         error = _extractErrorMessage(response, 'Failed to add animal');
       }
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to add animal right now. Please try again.');
     } finally {
       isLoading = false;
       notifyListeners();
@@ -123,7 +124,7 @@ class AnimalsProvider extends ChangeNotifier {
 
       error = _extractErrorMessage(response, 'Failed to update animal');
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to update animal right now. Please try again.');
     } finally {
       isLoading = false;
       notifyListeners();
@@ -166,7 +167,7 @@ class AnimalsProvider extends ChangeNotifier {
       notifyListeners();
       return null;
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(e, fallback: 'Unable to upload photo right now. Please try again.');
       notifyListeners();
       return null;
     }

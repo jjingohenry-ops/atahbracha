@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
+import '../core/utils/user_error_message.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -146,7 +147,7 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Sign up failed';
       return false;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Sign up failed. Please try again.');
       return false;
     } finally {
       _isLoading = false;
@@ -174,7 +175,7 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Sign in failed';
       return false;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Sign in failed. Please try again.');
       return false;
     } finally {
       _isLoading = false;
@@ -213,7 +214,7 @@ class AuthProvider with ChangeNotifier {
         _errorMessage = null;
         return true;
       }
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Google sign in failed. Please try again.');
       return false;
     } finally {
       _isLoading = false;
@@ -237,7 +238,7 @@ class AuthProvider with ChangeNotifier {
       final verificationId = await _authService.signInWithPhoneSendCode(phoneNumber);
       return verificationId;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Unable to send verification code. Please try again.');
       return null;
     } finally {
       _isLoading = false;
@@ -265,7 +266,7 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = 'Phone verification failed';
       return false;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Phone verification failed. Please try again.');
       return false;
     } finally {
       _isLoading = false;
@@ -308,7 +309,7 @@ class AuthProvider with ChangeNotifier {
       await firebaseUser.sendEmailVerification();
       return true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Unable to send verification email. Please try again.');
       notifyListeners();
       return false;
     }
@@ -327,7 +328,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return !requiresEmailVerification;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = UserErrorMessage.fromException(e, fallback: 'Unable to verify your email status right now. Please try again.');
       notifyListeners();
       return false;
     }

@@ -211,7 +211,11 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red[700]),
               ),
               const SizedBox(height: 8),
-              Text(error, style: TextStyle(fontSize: 13, color: Colors.red[600]), textAlign: TextAlign.center),
+              Text(
+                error.isNotEmpty ? error : 'Please try again in a moment.',
+                style: TextStyle(fontSize: 13, color: Colors.red[600]),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
