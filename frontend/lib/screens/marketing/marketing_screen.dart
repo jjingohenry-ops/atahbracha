@@ -219,7 +219,7 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
       'cta': 'Comment "PRICE" and we will send full details on WhatsApp.',
       'duration': '18-25s',
       'hashtags': '#Ankole #LivestockSales #FarmBusiness',
-      'imageUrl': 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=1200&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80',
     },
     {
       'id': '2',
@@ -258,7 +258,7 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
       'cta': 'DM to get this animal or feeding plan details.',
       'duration': '18-24s',
       'hashtags': '#BeforeAfter #LivestockGrowth #FarmResults',
-      'imageUrl': 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=1200&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80',
     },
     {
       'id': '5',
@@ -313,7 +313,7 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
       'cta': 'Tap reply now to receive available stock list.',
       'duration': 'Story set',
       'hashtags': '#FarmStories #LimitedStock #LivestockMarket',
-      'imageUrl': 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=1200&q=80',
+      'imageUrl': 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80',
     },
     {
       'id': 'ig4',

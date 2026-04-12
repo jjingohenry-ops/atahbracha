@@ -208,7 +208,7 @@ class _HeroSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(32),
                     image: const DecorationImage(
                       image: NetworkImage(
-                        'https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&w=1200&q=80',
+                        'https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=1200&q=80',
                       ),
                       fit: BoxFit.cover,
                     ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/reminders_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../home/home_screen.dart';
 import 'new_reminder_sheet.dart';
 import '../auth/login_screen.dart';
 
@@ -17,6 +18,7 @@ class RemindersScreen extends StatefulWidget {
 class _RemindersScreenState extends State<RemindersScreen> {
   DateTime _currentMonth = DateTime.now();
   int _selectedDay = DateTime.now().day; // active day
+  int _selectedNavIndex = 0;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
         return Scaffold(
           backgroundColor: Colors.transparent,
+          bottomNavigationBar: _buildBottomNavigationBar(theme, colorScheme),
           body: Container(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -154,6 +157,102 @@ class _RemindersScreenState extends State<RemindersScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBottomNavigationBar(ThemeData theme, ColorScheme colorScheme) {
+    final isDark = theme.brightness == Brightness.dark;
+    const labels = ['Dashboard', 'Animals', 'Chat', 'Market', 'Profile'];
+    const icons = [
+      Icons.pets,
+      Icons.cruelty_free,
+      Icons.chat_bubble_outline,
+      Icons.storefront,
+      Icons.pets_outlined,
+    ];
+    const baseColors = [
+      Color(0xFF0B2D70),
+      Color(0xFF1F3A75),
+      Color(0xFFD33131),
+      Color(0xFF2B5FB8),
+      Color(0xFF234B8D),
+    ];
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        decoration: BoxDecoration(
+          color: isDark
+              ? colorScheme.surfaceContainerHighest.withOpacity(0.82)
+              : const Color(0xCCDDBFC7),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? colorScheme.outline.withOpacity(0.25) : const Color(0x66FFFFFF),
+            width: 0.5,
+          ),
+        ),
+        child: Row(
+          children: List<Widget>.generate(labels.length, (int index) {
+            final bool isSelected = _selectedNavIndex == index;
+            final Color itemColor = isDark
+                ? (isSelected
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withOpacity(0.72))
+                : (isSelected ? baseColors[index] : baseColors[index].withOpacity(0.82));
+
+            return Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedNavIndex = index;
+                        });
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => HomeScreen(initialTabIndex: index),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icons[index], size: 18, color: itemColor),
+                            const SizedBox(height: 1),
+                            Text(
+                              labels[index],
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                color: itemColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (index < labels.length - 1)
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: isDark
+                          ? colorScheme.outline.withOpacity(0.3)
+                          : const Color(0x704E5B75),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 

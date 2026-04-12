@@ -80,7 +80,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
         final isIncomingPending = conversation.isPending && conversation.requestedToId == currentUserId;
 
         return Scaffold(
-          backgroundColor: colorScheme.surface,
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             title: Text(conversation.otherUser.username),
             actions: [
@@ -88,136 +88,154 @@ class _ConversationScreenState extends State<ConversationScreen> {
               const SizedBox(width: 12),
             ],
           ),
-          body: Column(
-            children: [
-              if (conversation.isPending)
-                Container(
-                  width: double.infinity,
-                  color: Colors.orange.withOpacity(isDark ? 0.25 : 0.15),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isIncomingPending
-                            ? 'This is a chat request. Accept to continue normal live chat.'
-                            : 'Chat request sent. Waiting for acceptance before normal chat starts.',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      if (isIncomingPending) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            ElevatedButton(
-                              onPressed: () async {
-                                await provider.respondToRequest(
-                                  conversationId: conversation.id,
-                                  accept: true,
-                                );
-                                await provider.loadConversations(silent: true);
-                              },
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                              child: const Text('Accept'),
-                            ),
-                            const SizedBox(width: 8),
-                            OutlinedButton(
-                              onPressed: () async {
-                                await provider.respondToRequest(
-                                  conversationId: conversation.id,
-                                  accept: false,
-                                );
-                                if (!mounted) return;
-                                Navigator.of(context).pop();
-                              },
-                              child: const Text('Reject'),
-                            ),
-                          ],
-                        ),
-                      ]
-                    ],
-                  ),
+          body: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(
+                  isDark
+                      ? 'assets/images/chattingdark.jpg'
+                      : 'assets/images/chattinglight.jpg',
                 ),
-              Expanded(
-                child: provider.activeMessages.isEmpty
-                    ? const Center(child: Text('No messages yet'))
-                    : ListView.builder(
-                        reverse: true,
-                        padding: const EdgeInsets.all(12),
-                        itemCount: provider.activeMessages.length,
-                        itemBuilder: (context, index) {
-                          final message = provider.activeMessages[provider.activeMessages.length - 1 - index];
-                          final isMine = message.senderId == currentUserId;
-                          return Align(
-                            alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                              decoration: BoxDecoration(
-                                color: isMine
-                                    ? const Color(0xFF13EC5B)
-                                    : colorScheme.surfaceContainerHighest.withOpacity(isDark ? 0.4 : 0.9),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    message.content,
-                                    style: TextStyle(
-                                      color: isMine ? const Color(0xFF102216) : colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatTime(message.createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: isMine
-                                          ? const Color(0xFF102216).withOpacity(0.75)
-                                          : colorScheme.onSurface.withOpacity(0.65),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  isDark
+                      ? Colors.black.withOpacity(0.58)
+                      : Colors.white.withOpacity(0.18),
+                  isDark ? BlendMode.darken : BlendMode.lighten,
+                ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          enabled: canSend,
-                          minLines: 1,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: canSend ? 'Type a message...' : 'Waiting for chat acceptance',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: Column(
+              children: [
+                if (conversation.isPending)
+                  Container(
+                    width: double.infinity,
+                    color: Colors.orange.withOpacity(isDark ? 0.25 : 0.15),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isIncomingPending
+                              ? 'This is a chat request. Accept to continue normal live chat.'
+                              : 'Chat request sent. Waiting for acceptance before normal chat starts.',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        if (isIncomingPending) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await provider.respondToRequest(
+                                    conversationId: conversation.id,
+                                    accept: true,
+                                  );
+                                  await provider.loadConversations(silent: true);
+                                },
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                child: const Text('Accept'),
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton(
+                                onPressed: () async {
+                                  await provider.respondToRequest(
+                                    conversationId: conversation.id,
+                                    accept: false,
+                                  );
+                                  if (!mounted) return;
+                                  Navigator.of(context).pop();
+                                },
+                                child: const Text('Reject'),
+                              ),
+                            ],
+                          ),
+                        ]
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: provider.activeMessages.isEmpty
+                      ? const Center(child: Text('No messages yet'))
+                      : ListView.builder(
+                          reverse: true,
+                          padding: const EdgeInsets.all(12),
+                          itemCount: provider.activeMessages.length,
+                          itemBuilder: (context, index) {
+                            final message = provider.activeMessages[provider.activeMessages.length - 1 - index];
+                            final isMine = message.senderId == currentUserId;
+                            return Align(
+                              alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                                decoration: BoxDecoration(
+                                  color: isMine
+                                      ? const Color(0xFF13EC5B)
+                                      : colorScheme.surfaceContainerHighest.withOpacity(isDark ? 0.48 : 0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      message.content,
+                                      style: TextStyle(
+                                        color: isMine ? const Color(0xFF102216) : colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTime(message.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isMine
+                                            ? const Color(0xFF102216).withOpacity(0.75)
+                                            : colorScheme.onSurface.withOpacity(0.65),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            enabled: canSend,
+                            minLines: 1,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              hintText: canSend ? 'Type a message...' : 'Waiting for chat acceptance',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: canSend ? const Color(0xFF13EC5B) : Colors.grey.shade400,
-                        child: IconButton(
-                          onPressed: canSend ? _sendMessage : null,
-                          icon: Icon(Icons.send, color: canSend ? const Color(0xFF102216) : Colors.black54),
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          backgroundColor: canSend ? const Color(0xFF13EC5B) : Colors.grey.shade400,
+                          child: IconButton(
+                            onPressed: canSend ? _sendMessage : null,
+                            icon: Icon(Icons.send, color: canSend ? const Color(0xFF102216) : Colors.black54),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
