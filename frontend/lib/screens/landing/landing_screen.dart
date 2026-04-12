@@ -11,9 +11,11 @@ class LandingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1024;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: isDark ? colorScheme.surface : _bg,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -37,12 +39,20 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.8)
+            : Colors.white.withOpacity(0.9),
         border: Border(
-          bottom: BorderSide(color: Colors.black.withOpacity(0.06)),
+          bottom: BorderSide(
+            color: isDark
+                ? colorScheme.outline.withOpacity(0.25)
+                : Colors.black.withOpacity(0.06),
+          ),
         ),
       ),
       child: Row(
@@ -50,7 +60,11 @@ class _Header extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.black.withOpacity(0.08)),
+              border: Border.all(
+                color: isDark
+                    ? colorScheme.outline.withOpacity(0.35)
+                    : Colors.black.withOpacity(0.08),
+              ),
             ),
             clipBehavior: Clip.antiAlias,
             child: Image.asset(
@@ -61,22 +75,23 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'Atahbracha',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               fontStyle: FontStyle.italic,
               letterSpacing: -0.4,
+              color: colorScheme.onSurface,
             ),
           ),
           const Spacer(),
           if (isDesktop) ...[
-            const Text('Features', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
+            Text('Features', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.7))),
             const SizedBox(width: 20),
-            const Text('Marketplace', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
+            Text('Marketplace', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.7))),
             const SizedBox(width: 20),
-            const Text('Insights', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
+            Text('Insights', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.7))),
             const SizedBox(width: 20),
           ],
           ElevatedButton(
@@ -102,6 +117,7 @@ class _HeroSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 26, 20, 24),
       child: Wrap(
@@ -130,21 +146,22 @@ class _HeroSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Manage Your Herd.\nGrow Your Wealth.',
                   style: TextStyle(
                     fontSize: 54,
                     height: 1.05,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1.4,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'The premium livestock intelligence platform for the modern African enterprise.',
                   style: TextStyle(
                     fontSize: 19,
-                    color: Colors.black54,
+                    color: colorScheme.onSurface.withOpacity(0.72),
                     height: 1.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -169,10 +186,10 @@ class _HeroSection extends StatelessWidget {
                     OutlinedButton(
                       onPressed: () => Navigator.of(context).pushNamed('/login'),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.black.withOpacity(0.12), width: 2),
+                        side: BorderSide(color: colorScheme.outline.withOpacity(0.3), width: 2),
                         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
                         shape: const StadiumBorder(),
-                        foregroundColor: Colors.black87,
+                        foregroundColor: colorScheme.onSurface,
                       ),
                       child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                     ),
@@ -211,7 +228,9 @@ class _HeroSection extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? colorScheme.surface
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -246,6 +265,8 @@ class _HeroSection extends StatelessWidget {
 class _PillarsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cards = [
       const _PillarCard(
         icon: Icons.monitor_heart,
@@ -268,20 +289,20 @@ class _PillarsSection extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Our Three Pillars',
-            style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -0.8),
+            style: TextStyle(fontSize: 38, fontWeight: FontWeight.w800, letterSpacing: -0.8, color: colorScheme.onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Engineered to transform your operation into a resilient, profitable enterprise.',
-            style: TextStyle(color: Colors.black54, fontSize: 16),
+            style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
@@ -325,11 +346,13 @@ class _PillarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: LandingScreen._bg,
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        color: isDark ? colorScheme.surfaceContainerHighest.withOpacity(0.55) : LandingScreen._bg,
+        border: Border.all(color: isDark ? colorScheme.outline.withOpacity(0.3) : Colors.black.withOpacity(0.06)),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Column(
@@ -340,9 +363,9 @@ class _PillarCard extends StatelessWidget {
             child: Icon(icon, color: const Color(0xFF0C9E1A)),
           ),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: colorScheme.onSurface)),
           const SizedBox(height: 8),
-          Text(body, style: const TextStyle(color: Colors.black54, height: 1.45)),
+          Text(body, style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), height: 1.45)),
         ],
       ),
     );
@@ -356,6 +379,8 @@ class _AppPreviewSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
       child: Wrap(
@@ -369,7 +394,7 @@ class _AppPreviewSection extends StatelessWidget {
             height: 630,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: isDark ? const Color(0xFF101412) : Colors.black,
               borderRadius: BorderRadius.circular(44),
               boxShadow: [
                 BoxShadow(
@@ -382,7 +407,7 @@ class _AppPreviewSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? colorScheme.surface : Colors.white,
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Column(
@@ -457,32 +482,32 @@ class _AppPreviewSection extends StatelessWidget {
           ),
           SizedBox(
             width: isDesktop ? 520 : double.infinity,
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Your Entire Operation, Refined.',
-                  style: TextStyle(fontSize: 46, fontWeight: FontWeight.w800, letterSpacing: -1.1),
+                  style: TextStyle(fontSize: 46, fontWeight: FontWeight.w800, letterSpacing: -1.1, color: colorScheme.onSurface),
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 Text(
                   'Built for the field with edge intelligence: full offline operation and seamless sync when you reconnect.',
-                  style: TextStyle(fontSize: 20, color: Colors.black54, height: 1.45),
+                  style: TextStyle(fontSize: 20, color: colorScheme.onSurface.withOpacity(0.72), height: 1.45),
                 ),
-                SizedBox(height: 22),
-                _FeatureLine(
+                const SizedBox(height: 22),
+                const _FeatureLine(
                   icon: Icons.cloud_off,
                   title: 'Offline-Native Design',
                   text: 'Capture and manage operations without cellular dependency.',
                 ),
-                SizedBox(height: 14),
-                _FeatureLine(
+                const SizedBox(height: 14),
+                const _FeatureLine(
                   icon: Icons.description,
                   title: 'Financial-Grade Reporting',
                   text: 'Generate lender-ready records and audit trails quickly.',
                 ),
-                SizedBox(height: 14),
-                _FeatureLine(
+                const SizedBox(height: 14),
+                const _FeatureLine(
                   icon: Icons.group,
                   title: 'Enterprise Permissions',
                   text: 'Delegate access with clear role boundaries across your team.',
@@ -589,11 +614,12 @@ class _FeatureLine extends StatelessWidget {
 class _FinalCtaSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 10, 20, 16),
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
       decoration: BoxDecoration(
-        color: const Color(0xFF111827),
+        color: isDark ? const Color(0xFF111827) : const Color(0xFF111827),
         borderRadius: BorderRadius.circular(34),
       ),
       child: Column(
@@ -651,6 +677,7 @@ class _FinalCtaSection extends StatelessWidget {
 class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 26),
       child: Column(
@@ -659,17 +686,22 @@ class _Footer extends StatelessWidget {
             spacing: 28,
             runSpacing: 10,
             alignment: WrapAlignment.center,
-            children: const [
-              Text('Management Suite', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
-              Text('Marketplace', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
-              Text('Pricing Plans', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
-              Text('Knowledge Base', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black54)),
+            children: [
+              Text('Management Suite', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
+              Text('Marketplace', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
+              Text('Pricing Plans', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
+              Text('Knowledge Base', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             '© 2026 Atahbracha Intelligence Systems. All rights reserved.',
-            style: TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: 11,
+              color: colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

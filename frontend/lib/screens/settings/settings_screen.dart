@@ -44,6 +44,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Consumer2<AuthProvider, SettingsProvider>(
       builder: (context, authProvider, settingsProvider, _) {
         final user = authProvider.user;
@@ -56,19 +59,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final email = user?.email ?? '';
         final role = user?.role ?? '';
 
-        return ListView(
-          padding: const EdgeInsets.only(bottom: 32),
+        return Stack(
           children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/bg2.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFFF7FFF9), Color(0xFFE8F9EF)],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                color: isDark
+                    ? colorScheme.surface.withOpacity(0.68)
+                    : Colors.white.withOpacity(0.42),
+              ),
+            ),
+            ListView(
+              padding: const EdgeInsets.only(bottom: 32),
+              children: [
             // Profile header
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colorScheme.surface.withOpacity(isDark ? 0.9 : 1),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: isDark
+                        ? Colors.black.withOpacity(0.2)
+                        : Colors.black.withOpacity(0.06),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -119,16 +150,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Text(
                           fullName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: _dark,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         if (email.isNotEmpty)
                           Text(
                             email,
-                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: colorScheme.onSurface.withOpacity(0.7),
+                            ),
                           ),
                         const SizedBox(height: 6),
                         Row(
@@ -319,6 +353,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
+              ],
+            ),
           ],
         );
       },
@@ -326,6 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _sectionHeader(String title) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 6),
       child: Text(
@@ -333,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: Colors.grey[500],
+          color: colorScheme.onSurface.withOpacity(0.6),
           letterSpacing: 0.8,
         ),
       ),
@@ -341,14 +378,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _settingsGroup(List<Widget> children) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.9 : 1),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: theme.brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.16)
+                : Colors.black.withOpacity(0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -364,6 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     String? subtitle,
     required VoidCallback onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Container(
         width: 36,
@@ -374,9 +416,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         child: Icon(icon, color: _dark, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: _dark)),
-      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])) : null,
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.62)))
+          : null,
+      trailing: Icon(Icons.chevron_right, color: colorScheme.onSurface.withOpacity(0.5)),
       onTap: onTap,
     );
   }
@@ -388,6 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Container(
         width: 36,
@@ -398,8 +443,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         child: Icon(icon, color: _dark, size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: _dark)),
-      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])) : null,
+      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: colorScheme.onSurface)),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.62)))
+          : null,
       trailing: Switch(
         value: value,
         onChanged: onChanged,

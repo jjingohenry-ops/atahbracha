@@ -46,29 +46,32 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F6),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
             // Header
             Container(
-              color: Colors.white,
+              color: colorScheme.surface,
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close),
-                    color: Colors.black87,
+                    color: colorScheme.onSurface,
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Atahbracah',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -98,8 +101,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       child: TabBar(
                         controller: _tabController,
                         indicatorColor: const Color(0xFF13EC5B),
-                        labelColor: Colors.black87,
-                        unselectedLabelColor: Colors.grey,
+                        labelColor: colorScheme.onSurface,
+                        unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
                         labelStyle: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -134,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               decoration: InputDecoration(
                                 labelText: 'Email Address',
                                 labelStyle: const TextStyle(
-                                  color: Colors.black87,
+                                  color: Color(0xFF2A2E2B),
                                   fontWeight: FontWeight.w500,
                                   fontSize: 14,
                                 ),
@@ -163,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   ),
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: isDark
+                                    ? colorScheme.surfaceContainerHighest.withOpacity(0.45)
+                                    : Colors.white,
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 16,
@@ -192,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               decoration: InputDecoration(
                                 labelText: 'Password',
                                 labelStyle: const TextStyle(
-                                  color: Colors.black87,
+                                  color: Color(0xFF2A2E2B),
                                   fontWeight: FontWeight.w500,
                                   fontSize: 14,
                                 ),
@@ -232,7 +237,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   ),
                                 ),
                                 filled: true,
-                                fillColor: Colors.white,
+                                fillColor: isDark
+                                    ? colorScheme.surfaceContainerHighest.withOpacity(0.45)
+                                    : Colors.white,
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 16,
@@ -297,7 +304,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: isDark
+                                      ? colorScheme.surfaceContainerHighest.withOpacity(0.45)
+                                      : Colors.white,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -334,7 +343,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: isDark
+                                      ? colorScheme.surfaceContainerHighest.withOpacity(0.45)
+                                      : Colors.white,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -375,7 +386,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 onPressed: _isLoading ? null : _handleAuth,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF13EC5B),
-                                  foregroundColor: Colors.black87,
+                                  foregroundColor: const Color(0xFF102216),
                                   elevation: 8,
                                   shadowColor: const Color(0xFF13EC5B).withOpacity(0.2),
                                   shape: RoundedRectangleBorder(
@@ -388,7 +399,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black87),
+                                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF102216)),
                                         ),
                                       )
                                     : Text(
@@ -417,7 +428,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   child: Text(
                                     'or continue with',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurface.withOpacity(0.7),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       letterSpacing: 1,
@@ -441,10 +452,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               height: 56,
                               child: OutlinedButton(
                                 onPressed: _isLoading ? null : _handleGoogleSignIn,
-                                child: const Text(
+                                child: Text(
                                   'Continue with Google',
                                   style: TextStyle(
-                                    color: Colors.black87,
+                                    color: colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
@@ -453,7 +464,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   side: BorderSide(
                                     color: Colors.green.withOpacity(0.2),
                                   ),
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: isDark
+                                      ? colorScheme.surfaceContainerHighest.withOpacity(0.4)
+                                      : Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -473,10 +486,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   Icons.phone,
                                   color: Colors.grey,
                                 ),
-                                label: const Text(
+                                label: Text(
                                   'Continue with Phone',
                                   style: TextStyle(
-                                    color: Colors.black87,
+                                    color: colorScheme.onSurface,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                   ),
@@ -485,7 +498,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   side: BorderSide(
                                     color: Colors.green.withOpacity(0.2),
                                   ),
-                                  backgroundColor: Colors.white,
+                                  backgroundColor: isDark
+                                      ? colorScheme.surfaceContainerHighest.withOpacity(0.4)
+                                      : Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -506,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             TextSpan(
                               text: 'By continuing, you agree to our ',
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurface.withOpacity(0.7),
                                 fontSize: 12,
                               ),
                               children: [
@@ -548,7 +563,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           Text(
                             'Live Build: V(${AppConstants.buildLabel})',
                             style: TextStyle(
-                              color: Colors.grey[500],
+                              color: colorScheme.onSurface.withOpacity(0.6),
                               fontSize: 10,
                               height: 1.1,
                             ),

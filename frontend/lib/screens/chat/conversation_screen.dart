@@ -59,6 +59,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUserId = authProvider.user?.id ?? '';
 
@@ -77,6 +80,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
         final isIncomingPending = conversation.isPending && conversation.requestedToId == currentUserId;
 
         return Scaffold(
+          backgroundColor: colorScheme.surface,
           appBar: AppBar(
             title: Text(conversation.otherUser.username),
             actions: [
@@ -89,7 +93,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
               if (conversation.isPending)
                 Container(
                   width: double.infinity,
-                  color: Colors.orange.withOpacity(0.15),
+                  color: Colors.orange.withOpacity(isDark ? 0.25 : 0.15),
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +154,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
                               decoration: BoxDecoration(
-                                color: isMine ? const Color(0xFF13EC5B) : Colors.grey.shade200,
+                                color: isMine
+                                    ? const Color(0xFF13EC5B)
+                                    : colorScheme.surfaceContainerHighest.withOpacity(isDark ? 0.4 : 0.9),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -159,14 +165,18 @@ class _ConversationScreenState extends State<ConversationScreen> {
                                 children: [
                                   Text(
                                     message.content,
-                                    style: TextStyle(color: isMine ? Colors.black : Colors.black87),
+                                    style: TextStyle(
+                                      color: isMine ? const Color(0xFF102216) : colorScheme.onSurface,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     _formatTime(message.createdAt),
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isMine ? Colors.black54 : Colors.black54,
+                                      color: isMine
+                                          ? const Color(0xFF102216).withOpacity(0.75)
+                                          : colorScheme.onSurface.withOpacity(0.65),
                                     ),
                                   ),
                                 ],
@@ -200,7 +210,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                         backgroundColor: canSend ? const Color(0xFF13EC5B) : Colors.grey.shade400,
                         child: IconButton(
                           onPressed: canSend ? _sendMessage : null,
-                          icon: const Icon(Icons.send, color: Colors.black87),
+                          icon: Icon(Icons.send, color: canSend ? const Color(0xFF102216) : Colors.black54),
                         ),
                       ),
                     ],
@@ -229,7 +239,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
     return Chip(
       label: Text(upper),
       side: BorderSide.none,
-      backgroundColor: color.withOpacity(0.15),
+      backgroundColor: color.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.28 : 0.15),
       labelStyle: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
     );

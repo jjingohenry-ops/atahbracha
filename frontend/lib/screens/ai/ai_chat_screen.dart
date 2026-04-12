@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/network/api_base.dart';
@@ -16,7 +17,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
   bool _isTyping = false;
 
   static const _primary = Color(0xFF13EC5B);
-  static const _bg = Color(0xFFF6F8F6);
   static const _systemPrompt =
       'You are AtahBracha AI, an expert livestock management assistant for farmers. '
       'You help with animal health diagnostics, breeding advice, feeding plans, vaccination schedules, '
@@ -33,8 +33,23 @@ class _AiChatScreenState extends State<AiChatScreen> {
       text:
           "Hello! I'm your livestock assistant. How can I help you with your animals today? I can provide health diagnostics, breeding advice, or current market trends.",
       time: _timeNow(),
+      aiAnimal: '🐮',
     ),
   ];
+
+  static const List<String> _animalEmojis = [
+    '🐮', // Cow
+    '🐔', // Chicken
+    '🐑', // Sheep
+    '🐐', // Goat
+    '🐖', // Pig
+    '🐎', // Horse
+    '🐕', // Dog
+    '🐈', // Cat
+    '🐇', // Rabbit
+    '🐟', // Fish
+  ];
+  final Random _rand = Random();
 
   static String _timeNow() {
     final now = DateTime.now();
@@ -101,9 +116,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
           assistantEntry['reasoning_details'] = message['reasoning_details'];
         }
         _history.add(assistantEntry);
+        final aiAnimal = _animalEmojis[_rand.nextInt(_animalEmojis.length)];
         setState(() {
           _isTyping = false;
-          _messages.add(_ChatMessage(isAi: true, text: reply, time: _timeNow()));
+          _messages.add(_ChatMessage(isAi: true, text: reply, time: _timeNow(), aiAnimal: aiAnimal));
         });
       } else {
         final err = jsonDecode(response.body);
@@ -146,39 +162,72 @@ class _AiChatScreenState extends State<AiChatScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
-      body: Column(
+      body: Stack(
         children: [
-          _buildHeader(context),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              itemCount: _messages.length + (_isTyping ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (_isTyping && index == _messages.length) {
-                  return _buildTypingIndicator();
-                }
-                final msg = _messages[index];
-                return msg.isAi
-                    ? _buildAiMessage(msg)
-                    : _buildUserMessage(msg);
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/bg4.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFF5FFF8), Color(0xFFE6F7EC)],
+                    ),
+                  ),
+                );
               },
             ),
           ),
-          _buildBottomBar(bottomInset),
+          Positioned.fill(
+            child: Container(
+              color: isDark
+                  ? colorScheme.surface.withOpacity(0.7)
+                  : Colors.white.withOpacity(0.4),
+            ),
+          ),
+          Column(
+            children: [
+              _buildHeader(context, theme, colorScheme, isDark),
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  itemCount: _messages.length + (_isTyping ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (_isTyping && index == _messages.length) {
+                      return _buildTypingIndicator();
+                    }
+                    final msg = _messages[index];
+                    return msg.isAi
+                        ? _buildAiMessage(msg)
+                        : _buildUserMessage(msg);
+                  },
+                ),
+              ),
+              _buildBottomBar(bottomInset, theme, colorScheme, isDark),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, ColorScheme colorScheme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: isDark
+            ? colorScheme.surface.withOpacity(0.9)
+            : Colors.white.withOpacity(0.9),
         border: Border(
           bottom: BorderSide(color: _primary.withOpacity(0.15)),
         ),
@@ -195,7 +244,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.arrow_back),
                   style: IconButton.styleFrom(
-                    foregroundColor: Colors.black87,
+                    foregroundColor: colorScheme.onSurface,
                     shape: const CircleBorder(),
                   ),
                 ),
@@ -204,12 +253,12 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'AtahBracha AI',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     Row(
@@ -241,7 +290,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   onPressed: () {},
                   icon: const Icon(Icons.more_vert),
                   style: IconButton.styleFrom(
-                    foregroundColor: Colors.black87,
+                    foregroundColor: colorScheme.onSurface,
                     shape: const CircleBorder(),
                   ),
                 ),
@@ -254,6 +303,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildTypingIndicator() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -273,7 +324,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? colorScheme.surface : Colors.white,
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(16),
                 bottomLeft: Radius.circular(16),
@@ -298,6 +349,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   Widget _buildAiMessage(_ChatMessage msg) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.white : Colors.black;
+    final bubbleColor = isDark ? Colors.grey[900] : Colors.white;
+    final borderColor = isDark ? _primary.withOpacity(0.18) : _primary.withOpacity(0.08);
+    final shadowColor = isDark ? Colors.black.withOpacity(0.18) : Colors.black.withOpacity(0.04);
+    final animal = msg.aiAnimal ?? _animalEmojis[0];
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -312,8 +370,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: _primary.withOpacity(0.3)),
             ),
-            child: const Center(
-              child: Text('🤖', style: TextStyle(fontSize: 20)),
+            child: Center(
+              child: Text(animal, style: const TextStyle(fontSize: 22)),
             ),
           ),
           const SizedBox(width: 10),
@@ -321,30 +379,37 @@ class _AiChatScreenState extends State<AiChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'ATAHABRACAH AI',
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: labelColor,
                     letterSpacing: 1.0,
+                    shadows: [
+                      Shadow(
+                        color: isDark ? Colors.black : Colors.white,
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: bubbleColor,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.zero,
                       topRight: Radius.circular(16),
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
                     ),
-                    border: Border.all(color: _primary.withOpacity(0.08)),
+                    border: Border.all(color: borderColor),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: shadowColor,
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -352,7 +417,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   ),
                   child: Text(
                     msg.text,
-                    style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -360,7 +429,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   padding: const EdgeInsets.only(left: 4),
                   child: Text(
                     msg.time,
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[300] : Colors.grey),
                   ),
                 ),
               ],
@@ -444,10 +513,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
     );
   }
 
-  Widget _buildBottomBar(double bottomInset) {
+  Widget _buildBottomBar(double bottomInset, ThemeData theme, ColorScheme colorScheme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? colorScheme.surface : Colors.white,
         border: Border(top: BorderSide(color: _primary.withOpacity(0.12))),
       ),
       padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + bottomInset),
@@ -474,10 +543,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     alignment: Alignment.center,
                     child: Text(
                       _suggestions[index],
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -492,7 +561,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: isDark
+                        ? colorScheme.surfaceContainerHighest.withOpacity(0.45)
+                        : Colors.grey[100],
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.transparent),
                   ),
@@ -517,13 +588,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       Expanded(
                         child: TextField(
                           controller: _inputController,
-                          style: const TextStyle(fontSize: 13),
-                          decoration: const InputDecoration(
+                          style: TextStyle(fontSize: 13, color: colorScheme.onSurface),
+                          decoration: InputDecoration(
                             hintText: 'Type your message...',
-                            hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+                            hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
                             border: InputBorder.none,
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                           onSubmitted: (_) => _sendMessage(),
                           textInputAction: TextInputAction.send,
@@ -621,6 +692,7 @@ class _ChatMessage {
   final String time;
   final bool isError;
   final bool isTyping;
+  final String? aiAnimal;
 
   const _ChatMessage({
     required this.isAi,
@@ -628,5 +700,6 @@ class _ChatMessage {
     required this.time,
     this.isError = false,
     this.isTyping = false,
+    this.aiAnimal,
   });
 }

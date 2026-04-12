@@ -54,7 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final sent = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -205,6 +205,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUserId = authProvider.user?.id ?? '';
 
@@ -257,7 +258,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F8F6),
+          backgroundColor: colorScheme.surface,
           body: RefreshIndicator(
             onRefresh: provider.loadConversations,
             child: ListView.separated(
@@ -325,15 +326,19 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isPendingIncoming = conversation.isPending && conversation.requestedToId == currentUserId;
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: theme.brightness == Brightness.dark
+                ? Colors.black.withOpacity(0.18)
+                : Colors.black.withOpacity(0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -348,7 +353,7 @@ class _ConversationTile extends StatelessWidget {
             conversation.otherUser.username.isNotEmpty
                 ? conversation.otherUser.username[0].toUpperCase()
                 : '?',
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
           ),
         ),
         title: Row(
@@ -356,7 +361,7 @@ class _ConversationTile extends StatelessWidget {
             Expanded(
               child: Text(
                 conversation.otherUser.username,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface),
               ),
             ),
             _StatusChip(status: conversation.status),

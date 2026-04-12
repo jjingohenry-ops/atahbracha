@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,9 +21,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final user = authProvider.user;
         
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F8F6),
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.white.withOpacity(0.86),
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -40,53 +39,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             centerTitle: true,
           ),
-          body: user == null
-              ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Profile Section
-                      _buildProfileSection(user!),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Account & Profile Section
-                      _buildAccountSection(),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Security Section
-                      _buildSecuritySection(),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // App Preferences Section
-                      _buildPreferencesSection(),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Support Section
-                      _buildSupportSection(),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Version Info
-                      Center(
-                        child: Text(
-                          'Version 2.4.0 (Build 108)',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[400],
-                            letterSpacing: 0.5,
-                            fontWeight: FontWeight.w500,
-                          ),
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/images/bg2.jpg',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFF7FFF9), Color(0xFFE8F9EF)],
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
+              ),
+              Positioned.fill(
+                child: Container(color: Colors.white.withOpacity(0.42)),
+              ),
+              user == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Profile Section
+                          _buildProfileSection(user!),
+
+                          const SizedBox(height: 24),
+
+                          // Account & Profile Section
+                          _buildAccountSection(),
+
+                          const SizedBox(height: 24),
+
+                          // Security Section
+                          _buildSecuritySection(),
+
+                          const SizedBox(height: 24),
+
+                          // App Preferences Section
+                          _buildPreferencesSection(),
+
+                          const SizedBox(height: 24),
+
+                          // Support Section
+                          _buildSupportSection(),
+
+                          const SizedBox(height: 32),
+
+                          // Version Info
+                          Center(
+                            child: Text(
+                              'Version 2.4.0 (Build 108)',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey[400],
+                                letterSpacing: 0.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ],
+          ),
         );
       },
     );

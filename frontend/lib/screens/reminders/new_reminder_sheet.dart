@@ -74,6 +74,7 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
   }
 
   void _showErrorDialog(String title, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -95,7 +96,7 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
         ),
         content: Text(
           message,
-          style: const TextStyle(fontSize: 14, color: Colors.grey),
+          style: TextStyle(fontSize: 14, color: colorScheme.onSurface.withOpacity(0.75)),
         ),
         actions: [
           TextButton(
@@ -110,13 +111,15 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
@@ -130,6 +133,7 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
                 style: TextStyle(
                   fontSize: isMobile ? 20 : 24,
                   fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -183,7 +187,7 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
                 onPressed: _isLoading ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _isLoading ? Colors.grey[400] : const Color(0xFF13EC5B),
-                  foregroundColor: Colors.black,
+                  foregroundColor: const Color(0xFF102216),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -196,7 +200,7 @@ class _NewReminderSheetState extends State<NewReminderSheet> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF102216)),
                         ),
                       )
                     : const Text('Save Reminder'),

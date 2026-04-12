@@ -57,28 +57,72 @@ class SmartLivestockApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RemindersProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
-      child: MaterialApp(
-        title: 'Atahbracha',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.light,
-          ),
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-          useMaterial3: true,
-        ),
-        // Mobile-first production lock: keep light theme until dark mode is fully tuned.
-        themeMode: ThemeMode.light,
-        home: const AuthWrapper(),
-        routes: {
-          '/landing': (context) => const LandingScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const LoginScreen(initialSignUp: true),
-          '/verify-email': (context) => const EmailVerificationScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/test': (context) => const TestAuthScreen(),
-          '/simple': (context) => const SimpleTestScreen(),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, _) {
+          return MaterialApp(
+            title: 'Atahbracha',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.green,
+                brightness: Brightness.light,
+              ),
+              scaffoldBackgroundColor: const Color(0xFFF6F8F6),
+              cardColor: Colors.white,
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFFF6F8F6),
+                foregroundColor: Color(0xFF102216),
+                elevation: 0,
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.green,
+                brightness: Brightness.dark,
+              ),
+              scaffoldBackgroundColor: const Color(0xFF181C1B),
+              cardColor: const Color(0xFF232826),
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF181C1B),
+                foregroundColor: Color(0xFFE8F0EB),
+                elevation: 0,
+              ),
+              dialogTheme: const DialogThemeData(
+                backgroundColor: Color(0xFF232826),
+              ),
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: const Color(0xFF232826),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              visualDensity: VisualDensity.adaptivePlatformDensity,
+              useMaterial3: true,
+            ),
+            themeMode: settingsProvider.themeMode,
+            home: const AuthWrapper(),
+            routes: {
+              '/landing': (context) => const LandingScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/signup': (context) => const LoginScreen(initialSignUp: true),
+              '/verify-email': (context) => const EmailVerificationScreen(),
+              '/home': (context) => const HomeScreen(),
+              '/test': (context) => const TestAuthScreen(),
+              '/simple': (context) => const SimpleTestScreen(),
+            },
+          );
         },
       ),
     );

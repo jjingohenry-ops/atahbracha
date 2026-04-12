@@ -33,42 +33,65 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Consumer<AuthProvider>(
       builder: (context, authProvider, _) {
         if (authProvider.user == null) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Column(
-          children: [
-            _buildSearch(),
-            Expanded(child: _buildAnimalTypeList()),
-          ],
+        return Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/bg1.jpg'),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                theme.brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.45)
+                    : Colors.white.withOpacity(0.12),
+                theme.brightness == Brightness.dark ? BlendMode.darken : BlendMode.lighten,
+              ),
+            ),
+          ),
+          child: Container(
+            color: theme.brightness == Brightness.dark
+                ? colorScheme.surface.withOpacity(0.68)
+                : Colors.white.withOpacity(0.42),
+            child: Column(
+              children: [
+                _buildSearch(theme, colorScheme),
+                Expanded(child: _buildAnimalTypeList(theme, colorScheme)),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildSearch() {
+  Widget _buildSearch(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: TextField(
         onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+        style: TextStyle(color: colorScheme.onSurface),
         decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.7)),
           hintText: 'Search animal type...',
+          hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.65)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.85 : 1),
         ),
       ),
     );
   }
 
-  Widget _buildAnimalTypeList() {
+  Widget _buildAnimalTypeList(ThemeData theme, ColorScheme colorScheme) {
     return Consumer<AnimalsProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading) {
@@ -104,7 +127,7 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
           return Center(
             child: Text(
               'No animal types found',
-              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), fontWeight: FontWeight.w600),
             ),
           );
         }
@@ -130,9 +153,9 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.88 : 1),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE6E6E6)),
+                  border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                 ),
                 child: Row(
                   children: [
@@ -141,7 +164,7 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                     Expanded(
                       child: Text(
                         _formatType(type),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
                       ),
                     ),
                     Column(
@@ -149,11 +172,11 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                       children: [
                         Text(
                           '$count',
-                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
+                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
                         ),
                         Text(
                           count == 1 ? 'Animal' : 'Animals',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.7)),
                         ),
                       ],
                     ),
@@ -222,11 +245,13 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F6),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text('${_formatType(widget.type)} Animals'),
-        backgroundColor: const Color(0xFFF6F8F6),
+        backgroundColor: colorScheme.surface,
         elevation: 0,
       ),
       body: Column(
@@ -236,14 +261,14 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.7)),
                 hintText: 'Search by name or tag...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: colorScheme.surfaceContainerHighest.withOpacity(theme.brightness == Brightness.dark ? 0.6 : 1),
               ),
             ),
           ),
@@ -266,7 +291,7 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                   return Center(
                     child: Text(
                       'No ${_formatType(widget.type).toLowerCase()} animals found',
-                      style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600),
+                      style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), fontWeight: FontWeight.w600),
                     ),
                   );
                 }
@@ -292,9 +317,9 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE6E6E6)),
+                          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                         ),
                         child: Row(
                           children: [
@@ -315,12 +340,12 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                                 children: [
                                   Text(
                                     (animal['name'] ?? 'Unnamed').toString(),
-                                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: colorScheme.onSurface),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Tag: ${(animal['tagNumber'] ?? animal['id'] ?? 'N/A').toString()}',
-                                    style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                                    style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -419,11 +444,12 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8F6),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text('Animal Profile'),
-        backgroundColor: const Color(0xFFF6F8F6),
+        backgroundColor: colorScheme.surface,
         elevation: 0,
       ),
       body: Consumer<AnimalsProvider>(
@@ -478,11 +504,13 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     required Color statusColor,
     required String? heroPhoto,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,12 +539,19 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                     children: [
                       Text(
                         (_animal['name'] ?? 'Unnamed animal').toString(),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 22,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Tag: ${(_animal['tagNumber'] ?? _animal['id'] ?? 'N/A').toString()}',
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withOpacity(0.7),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -549,6 +584,7 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _buildQuickStats() {
+    final colorScheme = Theme.of(context).colorScheme;
     final stats = <Map<String, dynamic>>[
       {
         'label': 'Weight',
@@ -584,9 +620,9 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             width: 152,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE7E7E7)),
+              border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,12 +631,16 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                 const SizedBox(height: 10),
                 Text(
                   stat['label'] as String,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   stat['value'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: colorScheme.onSurface,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1521,12 +1561,13 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _buildQuickActions() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE5E5E5)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Wrap(
         spacing: 8,
@@ -1553,12 +1594,13 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _sectionCard({required String title, required IconData icon, required Widget child}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE7E7E7)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1567,7 +1609,14 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             children: [
               Icon(icon, color: const Color(0xFF234B8D), size: 18),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -1578,10 +1627,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _metricTile(IconData icon, String title, String subtitle) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFA),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.55),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1593,7 +1643,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
+                ),
               ],
             ),
           ),

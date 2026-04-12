@@ -35,6 +35,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     assert(() {
       debugPaintBaselinesEnabled = false;
       debugPaintSizeEnabled = false;
@@ -49,120 +51,113 @@ class _RemindersScreenState extends State<RemindersScreen> {
         final user = authProvider.user;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F8F6),
-          body: user == null
-              ? const LoginScreen()
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Compact calendar week view
-                        _buildWeekCalendar(),
-
-                        // Tasks Header
-                        _buildTasksHeader(),
-
-                        // Task List
-                        Consumer<RemindersProvider>(
-                          builder: (context, provider, _) {
-                            if (provider.isLoading) {
-                              return const Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Center(child: CircularProgressIndicator()),
-                              );
-                            }
-                            if (provider.error != null) {
-                              return Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.red[50],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.red[300]!),
-                                  ),
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    children: [
-                                      const Icon(Icons.error_outline, color: Colors.red, size: 32),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'Oops! Unable to Load Reminders',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.red[700],
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        provider.error!,
-                                        style: TextStyle(fontSize: 14, color: Colors.red[600]),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton.icon(
-                                        onPressed: () async {
-                                          final settingsProvider =
-                                              Provider.of<SettingsProvider>(context, listen: false);
-                                          await provider.fetchReminders(
-                                            date: provider.selectedDate,
-                                            farmId: settingsProvider.activeFarmId,
-                                          );
-                                        },
-                                        icon: const Icon(Icons.refresh, size: 18),
-                                        label: const Text('Retry'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }
-                            if (provider.reminders.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  children: [
-                                    Icon(Icons.add_circle_outline,
-                                      size: 48,
-                                      color: Colors.grey[400]
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'No reminders',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Add reminder',
-                                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                            return _buildTaskList(provider.reminders);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/bg3.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  theme.brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.45)
+                      : Colors.white.withOpacity(0.1),
+                  theme.brightness == Brightness.dark ? BlendMode.darken : BlendMode.lighten,
                 ),
+              ),
+            ),
+            child: Container(
+              color: theme.brightness == Brightness.dark
+                  ? colorScheme.surface.withOpacity(0.68)
+                  : Colors.white.withOpacity(0.45),
+              child: user == null
+                  ? const LoginScreen()
+                  : SafeArea(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildWeekCalendar(theme, colorScheme),
+                            _buildTasksHeader(theme),
+                            Consumer<RemindersProvider>(
+                              builder: (context, provider, _) {
+                                if (provider.isLoading) {
+                                  return const Padding(
+                                    padding: EdgeInsets.all(24),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
+                                if (provider.error != null) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.red[50],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.red[300]!),
+                                      ),
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        children: [
+                                          const Icon(Icons.error_outline, color: Colors.red, size: 32),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'Oops! Unable to Load Reminders',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red[700],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            provider.error!,
+                                            style: TextStyle(fontSize: 14, color: Colors.red[600]),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (provider.reminders.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.add_circle_outline,
+                                          size: 48,
+                                          color: Colors.grey[400],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'No reminders',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                return _buildTaskList(provider.reminders, theme, colorScheme);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _buildWeekCalendar() {
+  Widget _buildWeekCalendar(ThemeData theme, ColorScheme colorScheme) {
     // simple horizontal week view for mobile
     final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
     return Container(
@@ -192,9 +187,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   width: 60,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF13EC5B) : Colors.white,
+                    color: isActive
+                        ? const Color(0xFF13EC5B)
+                        : colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.86 : 1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -204,7 +201,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isActive ? Colors.white : today ? const Color(0xFF13EC5B) : Colors.grey[600],
+                          color: isActive
+                              ? Colors.white
+                              : today
+                                  ? const Color(0xFF13EC5B)
+                                  : colorScheme.onSurface.withOpacity(0.74),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -212,7 +213,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         ['S','M','T','W','T','F','S'][DateTime(_currentMonth.year,_currentMonth.month,day).weekday % 7],
                         style: TextStyle(
                           fontSize: 12,
-                          color: isActive ? Colors.white : Colors.grey[500],
+                          color: isActive ? Colors.white : colorScheme.onSurface.withOpacity(0.62),
                         ),
                       ),
                     ],
@@ -226,7 +227,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
-  Widget _buildTasksHeader() {
+  Widget _buildTasksHeader(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: LayoutBuilder(
@@ -236,9 +237,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Upcoming Alarms',
-                      style: TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -269,9 +270,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Upcoming Alarms',
-                      style: TextStyle(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -302,7 +303,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
-  Widget _buildTaskList(List<Map<String, dynamic>> items) {
+  Widget _buildTaskList(List<Map<String, dynamic>> items, ThemeData theme, ColorScheme colorScheme) {
     return ListView.separated(
       shrinkWrap: true,
       padding: const EdgeInsets.all(16),
@@ -328,14 +329,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
         
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.9 : 1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.grey[200]!,
+              color: colorScheme.outline.withOpacity(0.2),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: theme.brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.14)
+                    : Colors.black.withOpacity(0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -374,7 +377,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: isCompleted ? Colors.grey[400] : const Color(0xFF102216),
+                                color: isCompleted
+                                  ? colorScheme.onSurface.withOpacity(0.45)
+                                  : colorScheme.onSurface,
                               decoration: isCompleted
                                   ? TextDecoration.lineThrough
                                   : null,
@@ -387,14 +392,14 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                 Icon(
                                   Icons.access_time,
                                   size: 14,
-                                  color: Colors.grey[600],
+                                  color: colorScheme.onSurface.withOpacity(0.68),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   [timeStr, location].where((s) => s.isNotEmpty).join(' • '),
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    color: colorScheme.onSurface.withOpacity(0.68),
                                   ),
                                 ),
                               ],
@@ -425,7 +430,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                               margin: const EdgeInsets.only(top: 8),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.grey[50],
+                                color: colorScheme.surfaceContainerHighest.withOpacity(
+                                  theme.brightness == Brightness.dark ? 0.35 : 0.6,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -433,7 +440,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                   Icon(
                                     Icons.sticky_note_2,
                                     size: 14,
-                                    color: Colors.grey[400],
+                                    color: colorScheme.onSurface.withOpacity(0.5),
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
@@ -441,7 +448,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                                       task['note'] as String,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[600],
+                                        color: colorScheme.onSurface.withOpacity(0.72),
                                         fontStyle: FontStyle.italic,
                                       ),
                                     ),

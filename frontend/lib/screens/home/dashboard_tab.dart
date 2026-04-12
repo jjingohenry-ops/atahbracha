@@ -1259,6 +1259,9 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildActivityGraph(List<dynamic> series, {required bool isLoading}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final List<_ChartPoint> points = _extractChartPoints(series, 'count');
     final double total = points.fold<double>(
       0,
@@ -1268,23 +1271,25 @@ class _DashboardTabState extends State<DashboardTab> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.68),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.65)
+            : Colors.white.withOpacity(0.68),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x22042C71)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
+          Text(
             'Animal Activity',
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0D2E14),
+              color: colorScheme.onSurface,
             ),
           ),
           Text(
             'Total activities: ${total.toStringAsFixed(0)}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF5B6A5F)),
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.72)),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -1332,6 +1337,9 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildMilkGraph(List<dynamic> series, {required bool isLoading}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final List<_ChartPoint> points = _extractChartPoints(series, 'liters');
     final double total = points.fold<double>(
       0,
@@ -1341,23 +1349,25 @@ class _DashboardTabState extends State<DashboardTab> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.68),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.65)
+            : Colors.white.withOpacity(0.68),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x22042C71)),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
+          Text(
             'Production',
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0D2E14),
+              color: colorScheme.onSurface,
             ),
           ),
           Text(
             'Total liters: ${total.toStringAsFixed(1)}L',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF5B6A5F)),
+            style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.72)),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -1405,6 +1415,9 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildQuickActions() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final List<Map<String, dynamic>> actions = <Map<String, dynamic>>[
       <String, dynamic>{
         'label': 'Add Animal',
@@ -1441,18 +1454,20 @@ class _DashboardTabState extends State<DashboardTab> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.68),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.65)
+            : Colors.white.withOpacity(0.68),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text(
+          Text(
             'Quick Actions',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF042C71),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 10),

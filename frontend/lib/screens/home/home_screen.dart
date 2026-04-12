@@ -372,6 +372,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Consumer2<AuthProvider, SettingsProvider>(
       builder: (context, authProvider, settingsProvider, child) {
         final user = authProvider.user;
@@ -384,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F8F6),
+          backgroundColor: colorScheme.surface,
           extendBody: true,
           body: user == null
               ? const LoginScreen()
@@ -397,10 +400,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           margin: const EdgeInsets.fromLTRB(8, 0, 8, 6),
                           padding: const EdgeInsets.fromLTRB(9, 3, 9, 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xCCDDBFC7),
+                            color: isDark
+                                ? colorScheme.surfaceContainerHighest.withOpacity(0.8)
+                                : const Color(0xCCDDBFC7),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(0x66FFFFFF),
+                              color: isDark
+                                  ? colorScheme.outline.withOpacity(0.25)
+                                  : const Color(0x66FFFFFF),
                               width: 0.5,
                             ),
                           ),
@@ -426,9 +433,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 8),
                               Text(
                                 _getTabTitle(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
-                                  color: Color(0xFF234B8D),
+                                  color: isDark ? colorScheme.onSurface : const Color(0xFF234B8D),
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -439,9 +446,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               const SizedBox(width: 6),
                               IconButton(
                                 onPressed: () {},
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.notifications,
-                                  color: Color(0xFF234B8D),
+                                  color: isDark ? colorScheme.onSurface : const Color(0xFF234B8D),
                                 ),
                                 iconSize: 18,
                                 constraints: const BoxConstraints.tightFor(
@@ -500,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          bottomNavigationBar: _buildBottomNavigationBar(),
+          bottomNavigationBar: _buildBottomNavigationBar(theme, colorScheme, isDark),
         );
       },
     );
@@ -511,7 +518,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return titles[_selectedTabIndex];
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(ThemeData theme, ColorScheme colorScheme, bool isDark) {
     const labels = ['Dashboard', 'Animals', 'Chat', 'Market', 'Profile'];
     const icons = [
       Icons.pets,
@@ -534,16 +541,23 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.fromLTRB(8, 0, 8, 6),
         padding: const EdgeInsets.symmetric(vertical: 3),
         decoration: BoxDecoration(
-          color: const Color(0xCCDDBFC7),
+          color: isDark
+              ? colorScheme.surfaceContainerHighest.withOpacity(0.82)
+              : const Color(0xCCDDBFC7),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0x66FFFFFF), width: 0.5),
+          border: Border.all(
+            color: isDark ? colorScheme.outline.withOpacity(0.25) : const Color(0x66FFFFFF),
+            width: 0.5,
+          ),
         ),
         child: Row(
           children: List<Widget>.generate(labels.length, (int index) {
             final bool isSelected = _selectedTabIndex == index;
-            final Color itemColor = isSelected
-                ? baseColors[index]
-                : baseColors[index].withOpacity(0.82);
+            final Color itemColor = isDark
+              ? (isSelected
+                ? colorScheme.onSurface
+                : colorScheme.onSurface.withOpacity(0.72))
+              : (isSelected ? baseColors[index] : baseColors[index].withOpacity(0.82));
 
             return Expanded(
               child: Row(
@@ -582,7 +596,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       width: 1,
                       height: 20,
-                      color: const Color(0x704E5B75),
+                      color: isDark
+                          ? colorScheme.outline.withOpacity(0.3)
+                          : const Color(0x704E5B75),
                     ),
                 ],
               ),
