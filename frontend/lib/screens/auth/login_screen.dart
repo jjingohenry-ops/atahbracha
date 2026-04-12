@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/utils/user_error_message.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -621,7 +622,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        _errorMessage = UserErrorMessage.fromException(
+          e,
+          fallback: 'Authentication failed. Please try again.',
+        );
       });
     } finally {
       if (mounted) {
@@ -678,7 +682,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Phone sign-in failed: $e'),
+                  content: const Text('Phone sign-in failed. Please try again.'),
                   backgroundColor: Colors.red,
                 ),
               );

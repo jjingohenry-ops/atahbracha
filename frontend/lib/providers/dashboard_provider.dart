@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import '../core/network/api_base.dart';
+import '../core/utils/user_error_message.dart';
 
 class DashboardProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -23,7 +24,10 @@ class DashboardProvider extends ChangeNotifier {
       final dynamic message =
           body['error'] ?? body['message'] ?? body['details']?['message'];
       if (message is String && message.trim().isNotEmpty) {
-        return message;
+        return UserErrorMessage.sanitizeServerMessage(
+          message,
+          fallback: fallback,
+        );
       }
     } catch (_) {
       // Ignore parse failures and return fallback.
@@ -142,10 +146,13 @@ class DashboardProvider extends ChangeNotifier {
         trends = data['trends'];
         animalSnapshot = data['animalSnapshot'];
       } else {
-        error = 'Failed to load dashboard data (${response.statusCode})';
+        error = 'Unable to load dashboard data right now. Please try again.';
       }
     } catch (e) {
-      error = e.toString();
+      error = UserErrorMessage.fromException(
+        e,
+        fallback: 'Unable to load dashboard data right now. Please try again.',
+      );
     }
     isLoading = false;
     notifyListeners();
@@ -185,7 +192,10 @@ class DashboardProvider extends ChangeNotifier {
       actionError = _extractErrorMessage(response, 'Failed to save action');
       return false;
     } catch (e) {
-      actionError = e.toString();
+      actionError = UserErrorMessage.fromException(
+        e,
+        fallback: 'Unable to save your update right now. Please try again.',
+      );
       return false;
     } finally {
       isSavingAction = false;

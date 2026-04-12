@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/network/api_base.dart';
+import '../../core/utils/user_error_message.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -123,7 +124,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
         });
       } else {
         final err = jsonDecode(response.body);
-        final errMsg = err['error'] ?? 'Request failed (${response.statusCode})';
+        final errMsg = UserErrorMessage.sanitizeServerMessage(
+          err['error']?.toString(),
+          fallback: 'Unable to get a response right now. Please try again.',
+        );
         _history.removeLast(); // remove user message from history on failure
         setState(() {
           _isTyping = false;

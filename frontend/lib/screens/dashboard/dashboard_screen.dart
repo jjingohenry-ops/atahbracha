@@ -31,7 +31,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (provider.error != null) {
           return Scaffold(
             backgroundColor: const Color(0xFFF6F8F6),
-            body: Center(child: Text('Error: ${provider.error}')),
+            body: Center(
+              child: Text(
+                provider.error ?? 'Unable to load dashboard right now. Please try again.',
+              ),
+            ),
           );
         }
         final stats = provider.stats ?? {};
