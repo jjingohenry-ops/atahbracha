@@ -206,91 +206,117 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUserId = authProvider.user?.id ?? '';
 
     return Consumer<ChatProvider>(
       builder: (context, provider, _) {
         if (provider.isLoadingConversations && provider.conversations.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: _buildBackground(
+              child: const Center(child: CircularProgressIndicator()),
+              isDark: isDark,
+              colorScheme: colorScheme,
+            ),
+          );
         }
 
         if (provider.error != null && provider.conversations.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 42),
-                  const SizedBox(height: 10),
-                  Text(provider.error!, textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: provider.loadConversations,
-                    child: const Text('Retry'),
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: _buildBackground(
+              isDark: isDark,
+              colorScheme: colorScheme,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 42),
+                      const SizedBox(height: 10),
+                      Text(provider.error!, textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: provider.loadConversations,
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           );
         }
 
         if (provider.conversations.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.chat_bubble_outline, size: 56, color: Colors.grey[400]),
-                const SizedBox(height: 12),
-                const Text('No chats yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                const Text('Search for users and send a chat request to begin.'),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _openNewChatDialog,
-                  icon: const Icon(Icons.person_search),
-                  label: const Text('Start Chat'),
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: _buildBackground(
+              isDark: isDark,
+              colorScheme: colorScheme,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.chat_bubble_outline, size: 56, color: Colors.grey[400]),
+                    const SizedBox(height: 12),
+                    const Text('No chats yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    const Text('Search for users and send a chat request to begin.'),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _openNewChatDialog,
+                      icon: const Icon(Icons.person_search),
+                      label: const Text('Start Chat'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         }
 
         return Scaffold(
-          backgroundColor: colorScheme.surface,
-          body: RefreshIndicator(
-            onRefresh: provider.loadConversations,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemBuilder: (context, index) {
-                final conversation = provider.conversations[index];
-                return _ConversationTile(
-                  conversation: conversation,
-                  currentUserId: currentUserId,
-                  onAccept: () async {
-                    await provider.respondToRequest(
-                      conversationId: conversation.id,
-                      accept: true,
-                    );
-                  },
-                  onReject: () async {
-                    await provider.respondToRequest(
-                      conversationId: conversation.id,
-                      accept: false,
-                    );
-                  },
-                  onOpen: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ConversationScreen(conversation: conversation),
-                      ),
-                    );
-                  },
-                );
-              },
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemCount: provider.conversations.length,
+          backgroundColor: Colors.transparent,
+          body: _buildBackground(
+            isDark: isDark,
+            colorScheme: colorScheme,
+            child: RefreshIndicator(
+              onRefresh: provider.loadConversations,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                itemBuilder: (context, index) {
+                  final conversation = provider.conversations[index];
+                  return _ConversationTile(
+                    conversation: conversation,
+                    currentUserId: currentUserId,
+                    onAccept: () async {
+                      await provider.respondToRequest(
+                        conversationId: conversation.id,
+                        accept: true,
+                      );
+                    },
+                    onReject: () async {
+                      await provider.respondToRequest(
+                        conversationId: conversation.id,
+                        accept: false,
+                      );
+                    },
+                    onOpen: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ConversationScreen(conversation: conversation),
+                        ),
+                      );
+                    },
+                  );
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemCount: provider.conversations.length,
+              ),
             ),
           ),
           floatingActionButton: Padding(
@@ -305,6 +331,33 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBackground({
+    required Widget child,
+    required bool isDark,
+    required ColorScheme colorScheme,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: const AssetImage('assets/images/bg4.jpg'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            isDark
+                ? Colors.black.withOpacity(0.52)
+                : Colors.white.withOpacity(0.2),
+            isDark ? BlendMode.darken : BlendMode.lighten,
+          ),
+        ),
+      ),
+      child: Container(
+        color: isDark
+            ? colorScheme.surface.withOpacity(0.45)
+            : Colors.transparent,
+        child: child,
+      ),
     );
   }
 }

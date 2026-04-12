@@ -335,6 +335,8 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.user;
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
         
         if (user == null) {
           return const Center(child: CircularProgressIndicator());
@@ -343,26 +345,38 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
         final animalsProvider = Provider.of<AnimalsProvider>(context);
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F8F6),
-          body: DefaultTextStyle.merge(
-            style: const TextStyle(decoration: TextDecoration.none),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildTabs(),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.55,
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildTikTokTemplates(animalsProvider),
-                          _buildInstagramTemplates(animalsProvider),
-                        ],
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const AssetImage('assets/images/marketing.jpeg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.2),
+                  isDark ? BlendMode.darken : BlendMode.lighten,
+                ),
+              ),
+            ),
+            child: Container(
+              color: isDark ? Colors.black.withOpacity(0.12) : Colors.transparent,
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(decoration: TextDecoration.none),
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildTabs(),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildTikTokTemplates(animalsProvider),
+                            _buildInstagramTemplates(animalsProvider),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
