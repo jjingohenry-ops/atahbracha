@@ -10,10 +10,13 @@ import 'providers/animals_provider.dart';
 import 'providers/reminders_provider.dart';
 import 'providers/chat_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/auth/email_verification_screen.dart';
 import 'screens/auth/test_auth_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/landing/landing_screen.dart';
+import 'screens/legal/privacy_policy_screen.dart';
+import 'screens/legal/terms_of_service_screen.dart';
 import 'screens/test/simple_test_screen.dart';
 
 void main() async {
@@ -117,6 +120,9 @@ class SmartLivestockApp extends StatelessWidget {
               '/landing': (context) => const LandingScreen(),
               '/login': (context) => const LoginScreen(),
               '/signup': (context) => const LoginScreen(initialSignUp: true),
+              '/reset-password': (context) => const ResetPasswordScreen(),
+              '/privacy-policy': (context) => const PrivacyPolicyScreen(),
+              '/terms-of-service': (context) => const TermsOfServiceScreen(),
               '/verify-email': (context) => const EmailVerificationScreen(),
               '/home': (context) => const HomeScreen(),
               '/test': (context) => const TestAuthScreen(),
@@ -136,13 +142,29 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> {
+class _AuthWrapperState extends State<AuthWrapper> with WidgetsBindingObserver {
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeApp();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      authProvider.checkAuthStatus();
+      setState(() {});
+    }
   }
 
   Future<void> _initializeApp() async {

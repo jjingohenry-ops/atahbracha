@@ -75,6 +75,10 @@ export interface Animal {
   id: string;
   farmId: string;
   name: string;
+  tagNumber?: string | undefined;
+  breed?: string | undefined;
+  pedigreeRecords?: Array<Record<string, string>> | undefined;
+  medicalHistoryRecords?: Array<Record<string, string>> | undefined;
   type: AnimalType;
   age: number;
   weight: number;

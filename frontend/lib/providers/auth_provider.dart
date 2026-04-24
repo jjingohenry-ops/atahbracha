@@ -274,6 +274,78 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> signInWithPhonePassword(String phoneNumber, String password) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _authService.signInWithPhonePassword(phoneNumber, password);
+      if (result != null) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
+        return true;
+      }
+      _errorMessage = 'Phone sign in failed';
+      return false;
+    } catch (e) {
+      _errorMessage = UserErrorMessage.fromException(
+        e,
+        fallback: 'Phone sign in failed. Please try again.',
+      );
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> completePhoneSignUp({
+    required String phoneNumber,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _authService.completePhoneSignUp(
+        phoneNumber: phoneNumber,
+        password: password,
+        firstName: firstName,
+        lastName: lastName,
+      );
+
+      if (result != null) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await _loadUserData(currentUser);
+        } else {
+          _user = result;
+        }
+        return true;
+      }
+
+      _errorMessage = 'Phone sign up failed';
+      return false;
+    } catch (e) {
+      _errorMessage = UserErrorMessage.fromException(
+        e,
+        fallback: 'Phone sign up failed. Please try again.',
+      );
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Sign Out
   Future<void> signOut() async {
     _isLoading = true;
@@ -331,6 +403,46 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = UserErrorMessage.fromException(e, fallback: 'Unable to verify your email status right now. Please try again.');
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<bool> resetPassword(String email) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authService.resetPassword(email);
+      return true;
+    } catch (e) {
+      _errorMessage = UserErrorMessage.fromException(
+        e,
+        fallback: 'Unable to send password reset email. Please try again.',
+      );
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> confirmPasswordReset(String code, String newPassword) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _authService.confirmPasswordReset(code, newPassword);
+      return true;
+    } catch (e) {
+      _errorMessage = UserErrorMessage.fromException(
+        e,
+        fallback: 'Unable to reset password. Please try again.',
+      );
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

@@ -12,8 +12,9 @@ import '../reminders/reminders_screen.dart';
 
 class DashboardTab extends StatefulWidget {
   final Future<void> Function(String?)? onFarmChanged;
+  final VoidCallback? onAnimalSaved;
 
-  const DashboardTab({super.key, this.onFarmChanged});
+  const DashboardTab({super.key, this.onFarmChanged, this.onAnimalSaved});
 
   @override
   State<DashboardTab> createState() => _DashboardTabState();
@@ -116,6 +117,7 @@ class _DashboardTabState extends State<DashboardTab> {
     }
 
     await _refreshAll();
+    widget.onAnimalSaved?.call();
   }
 
   Future<void> _openAiChat() async {

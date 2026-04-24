@@ -93,14 +93,14 @@ class _ConversationScreenState extends State<ConversationScreen> {
               image: DecorationImage(
                 image: AssetImage(
                   isDark
-                      ? 'assets/images/chattingnewdark.jpg'
-                      : 'assets/images/chattingnewlight.jpg',
+                      ? 'assets/images/chattingnewdark.png'
+                      : 'assets/images/chattingnewlight.png',
                 ),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   isDark
-                      ? Colors.black.withOpacity(0.4)
-                      : Colors.white.withOpacity(0.08),
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.04),
                   isDark ? BlendMode.darken : BlendMode.lighten,
                 ),
               ),

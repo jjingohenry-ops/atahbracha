@@ -90,7 +90,7 @@ export const authenticateFirebaseToken = async (req: any, res: any, next: any) =
 };
 
 // Helper function to get Firebase user by UID
-export const getFirebaseUser = async (uid: string) => {
+export const getFirebaseUser = async (uid: string): Promise<admin.auth.UserRecord> => {
   try {
     return await firebaseAdmin.auth().getUser(uid);
   } catch (error) {

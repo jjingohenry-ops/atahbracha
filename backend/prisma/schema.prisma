@@ -56,6 +56,10 @@ model Animal {
   id          String   @id @default(cuid())
   farmId      String
   name        String
+  tagNumber   String?
+  breed       String?
+  pedigreeRecords Json?
+  medicalHistoryRecords Json?
   type        AnimalType
   age         Int
   weight      Float

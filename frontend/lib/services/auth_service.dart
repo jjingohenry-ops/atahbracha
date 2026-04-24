@@ -9,6 +9,17 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
+  static String normalizePhoneNumber(String phoneNumber) {
+    final stripped = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (stripped.startsWith('+')) return stripped;
+    return '+$stripped';
+  }
+
+  static String phoneAliasEmail(String phoneNumber) {
+    final digitsOnly = normalizePhoneNumber(phoneNumber).replaceAll(RegExp(r'[^0-9]'), '');
+    return 'phone_$digitsOnly@atahbracha.app';
+  }
+
   // Get current user
   User? get currentUser => _auth.currentUser;
 
@@ -58,32 +69,23 @@ class AuthService {
     }
   }
 
+  Future<UserModel?> signInWithPhonePassword(String phoneNumber, String password) async {
+    final aliasEmail = phoneAliasEmail(phoneNumber);
+    return signIn(aliasEmail, password);
+  }
+
   // Google Sign In
   Future<UserModel?> signInWithGoogle() async {
     try {
       UserCredential userCredential;
 
       if (kIsWeb) {
-        // Prefer popup on desktop web, but fall back to redirect for mobile browsers.
+        // Use redirect consistently on web to avoid popup blockers and blank popup tabs.
         final provider = GoogleAuthProvider();
         provider.addScope('email');
         provider.addScope('profile');
-
-        try {
-          userCredential = await _auth.signInWithPopup(provider);
-        } on FirebaseAuthException catch (e) {
-          final shouldFallbackToRedirect =
-              e.code == 'popup-blocked' ||
-              e.code == 'popup-closed-by-user' ||
-              e.code == 'operation-not-supported-in-this-environment';
-
-          if (shouldFallbackToRedirect) {
-            await _auth.signInWithRedirect(provider);
-            throw 'REDIRECT_IN_PROGRESS';
-          }
-
-          rethrow;
-        }
+        await _auth.signInWithRedirect(provider);
+        throw 'REDIRECT_IN_PROGRESS';
       } else {
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         if (googleUser == null) return null;
@@ -171,6 +173,56 @@ class AuthService {
     }
   }
 
+  Future<UserModel?> completePhoneSignUp({
+    required String phoneNumber,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    try {
+      final current = _auth.currentUser;
+      if (current == null) {
+        throw 'Phone verification session not found. Please try again.';
+      }
+
+      final aliasEmail = phoneAliasEmail(phoneNumber);
+      final credential = EmailAuthProvider.credential(
+        email: aliasEmail,
+        password: password,
+      );
+
+      final hasPasswordProvider = current.providerData.any(
+        (provider) => provider.providerId == 'password',
+      );
+
+      if (!hasPasswordProvider) {
+        await current.linkWithCredential(credential);
+      }
+
+      final fullName = '$firstName $lastName'.trim();
+      if (fullName.isNotEmpty) {
+        await current.updateDisplayName(fullName);
+      }
+
+      final refreshed = _auth.currentUser;
+      if (refreshed == null) {
+        throw 'Unable to complete phone sign up. Please try again.';
+      }
+
+      final names = refreshed.displayName?.split(' ') ?? ['', ''];
+      return UserModel(
+        id: refreshed.uid,
+        email: refreshed.email ?? aliasEmail,
+        firstName: names.isNotEmpty && names.first.isNotEmpty ? names.first : firstName,
+        lastName: names.length > 1 ? names.skip(1).join(' ') : lastName,
+        role: 'FARMER',
+        phone: refreshed.phoneNumber ?? normalizePhoneNumber(phoneNumber),
+      );
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
   // Sign Out
   Future<void> signOut() async {
     Object? lastError;
@@ -199,6 +251,14 @@ class AuthService {
   Future<void> resetPassword(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw _handleAuthError(e);
+    }
+  }
+
+  Future<void> confirmPasswordReset(String code, String newPassword) async {
+    try {
+      await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
     } catch (e) {
       throw _handleAuthError(e);
     }
@@ -252,6 +312,20 @@ class AuthService {
           return 'Too many requests. Try again later.';
         case 'user-disabled':
           return 'This user account has been disabled.';
+        case 'credential-already-in-use':
+          return 'This phone account is already registered. Please sign in instead.';
+        case 'provider-already-linked':
+          return 'This phone account is already set up. Please sign in.';
+        case 'invalid-credential':
+          return 'Incorrect email or password. Please try again.';
+        case 'invalid-login-credentials':
+          return 'Incorrect email or password. Please try again.';
+        case 'account-exists-with-different-credential':
+          return 'An account already exists with this email using a different sign-in method.';
+        case 'popup-closed-by-user':
+          return 'Google sign-in was cancelled. Please try again.';
+        case 'popup-blocked':
+          return 'Popup was blocked. Please allow popups or try again.';
         default:
           return 'Authentication error: ${error.message}';
       }

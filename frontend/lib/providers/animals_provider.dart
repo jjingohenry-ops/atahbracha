@@ -143,6 +143,7 @@ class AnimalsProvider extends ChangeNotifier {
       }
 
       final uri = ApiBase.uri('/animals/upload-photo');
+      print('Upload URI: $uri');
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
       final photoBytes = await photoFile.readAsBytes();
@@ -155,8 +156,11 @@ class AnimalsProvider extends ChangeNotifier {
         ),
       );
 
+      print('Sending upload request...');
       final streamed = await request.send();
       final response = await http.Response.fromStream(streamed);
+      print('Upload response status: ${response.statusCode}');
+      print('Upload response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
@@ -167,6 +171,7 @@ class AnimalsProvider extends ChangeNotifier {
       notifyListeners();
       return null;
     } catch (e) {
+      print('Upload error: $e');
       error = UserErrorMessage.fromException(e, fallback: 'Unable to upload photo right now. Please try again.');
       notifyListeners();
       return null;

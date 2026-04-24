@@ -2,8 +2,9 @@ class UserErrorMessage {
   static String fromException(Object error, {required String fallback}) {
     final raw = error.toString().trim();
     if (raw.isEmpty) return fallback;
+    final withoutPrefix = raw.replaceFirst(RegExp(r'^Exception:\s*'), '');
 
-    final lower = raw.toLowerCase();
+    final lower = withoutPrefix.toLowerCase();
     if (lower.contains('timeout')) {
       return 'Request timed out. Please try again.';
     }
@@ -15,8 +16,15 @@ class UserErrorMessage {
         lower.contains('socketexception')) {
       return 'Unable to connect right now. Please check your connection and try again.';
     }
-    if (lower.contains('firebaseauthexception')) {
-      return 'Authentication failed. Please try again.';
+
+    final looksTechnical = lower.contains('firebaseauthexception') ||
+        lower.contains('stack') ||
+        lower.contains('uri=') ||
+        lower.contains('http://') ||
+        lower.contains('https://');
+
+    if (!looksTechnical && withoutPrefix.isNotEmpty) {
+      return withoutPrefix;
     }
 
     return fallback;

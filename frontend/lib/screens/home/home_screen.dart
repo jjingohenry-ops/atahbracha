@@ -280,12 +280,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Widget> _buildTabs() {
     return [
-      DashboardTab(onFarmChanged: _onFarmChanged),
+      DashboardTab(
+        onFarmChanged: _onFarmChanged,
+        onAnimalSaved: _switchToAnimalsTab,
+      ),
       const AnimalsScreen(),
       const ChatScreen(),
       const MarketingScreen(),
       const SettingsScreen(),
     ];
+  }
+
+  void _switchToAnimalsTab() {
+    if (!mounted) return;
+    setState(() {
+      _selectedTabIndex = 1;
+    });
   }
 
   Future<void> _openAiChat() async {
@@ -575,7 +585,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(icons[index], size: 18, color: itemColor),
+                            Icon(
+                              icons[index],
+                              size: isSelected ? 23 : 18,
+                              color: itemColor,
+                            ),
                             const SizedBox(height: 1),
                             Text(
                               labels[index],

@@ -65,7 +65,7 @@ npm run dev
 | Task | Command |
 |------|---------|
 | Backend only | `cd backend && npm run dev` |
-| Frontend only | `cd frontend && flutter run -d web-server --web-port=8080` |
+| Frontend only | `cd frontend && flutter run -d web-server --web-port=8080` 
 | Build backend | `cd backend && npm run build` |
 | Build Flutter web | `cd frontend && flutter build web` |
 | Release readiness gate | `npm run release:check` |

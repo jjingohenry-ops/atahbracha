@@ -349,16 +349,16 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
           body: Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: const AssetImage('assets/images/marketing.jpeg'),
+                image: const AssetImage('assets/images/marketing.png'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  isDark ? Colors.black.withOpacity(0.5) : Colors.white.withOpacity(0.2),
+                  isDark ? Colors.black.withOpacity(0.3) : Colors.white.withOpacity(0.08),
                   isDark ? BlendMode.darken : BlendMode.lighten,
                 ),
               ),
             ),
             child: Container(
-              color: isDark ? Colors.black.withOpacity(0.12) : Colors.transparent,
+              color: isDark ? Colors.black.withOpacity(0.06) : Colors.transparent,
               child: DefaultTextStyle.merge(
                 style: const TextStyle(decoration: TextDecoration.none),
                 child: SafeArea(
@@ -393,7 +393,7 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
       margin: compact ? EdgeInsets.zero : const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.88),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFF13EC5B).withOpacity(0.2)),
       ),
@@ -634,7 +634,7 @@ class _MarketingScreenState extends State<MarketingScreen> with TickerProviderSt
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFF13EC5B).withOpacity(0.1),

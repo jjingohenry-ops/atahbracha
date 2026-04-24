@@ -7,7 +7,10 @@ import 'core/services/navigation_service.dart';
 import 'core/themes/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/legal/privacy_policy_screen.dart';
+import 'screens/legal/terms_of_service_screen.dart';
 
 /// Environment configuration
 enum Environment { dev, staging, prod }
@@ -114,6 +117,9 @@ class SmartLivestockApp extends StatelessWidget {
   Map<String, WidgetBuilder> _buildRoutes() {
     return {
       '/login': (context) => const LoginScreen(),
+      '/reset-password': (context) => const ResetPasswordScreen(),
+      '/privacy-policy': (context) => const PrivacyPolicyScreen(),
+      '/terms-of-service': (context) => const TermsOfServiceScreen(),
       '/home': (context) => const HomeScreen(),
       // Add other routes as needed
     };

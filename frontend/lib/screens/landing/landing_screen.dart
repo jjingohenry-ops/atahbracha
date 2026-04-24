@@ -413,18 +413,28 @@ class _AppPreviewSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.short_text, color: Colors.black45),
-                      CircleAvatar(
+                      Icon(
+                        Icons.short_text,
+                        color: isDark ? colorScheme.onSurface.withOpacity(0.68) : Colors.black45,
+                      ),
+                      const CircleAvatar(
                         backgroundColor: Color(0x3313EC25),
                         child: Icon(Icons.person, color: Color(0xFF0C9E1A)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text('Atahbracha Mobile', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                  Text(
+                    'Atahbracha Mobile',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -435,11 +445,21 @@ class _AppPreviewSection extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('ECOSYSTEM HEALTH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black45)),
-                            Text('98% OPTIMAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0C9E1A))),
+                            Text(
+                              'ECOSYSTEM HEALTH',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? colorScheme.onSurface.withOpacity(0.72) : Colors.black45,
+                              ),
+                            ),
+                            const Text(
+                              '98% OPTIMAL',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF0C9E1A)),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -468,12 +488,12 @@ class _AppPreviewSection extends StatelessWidget {
                     good: false,
                   ),
                   const Spacer(),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      Icon(Icons.grid_view, color: Color(0xFF0C9E1A)),
-                      Icon(Icons.analytics, color: Colors.black26),
-                      Icon(Icons.chat_bubble, color: Colors.black26),
+                      const Icon(Icons.grid_view, color: Color(0xFF0C9E1A)),
+                      Icon(Icons.analytics, color: isDark ? colorScheme.onSurface.withOpacity(0.55) : Colors.black26),
+                      Icon(Icons.chat_bubble, color: isDark ? colorScheme.onSurface.withOpacity(0.55) : Colors.black26),
                     ],
                   ),
                 ],
@@ -503,13 +523,13 @@ class _AppPreviewSection extends StatelessWidget {
                 const SizedBox(height: 14),
                 const _FeatureLine(
                   icon: Icons.description,
-                  title: 'Financial-Grade Reporting',
+                  title: 'manage expenses',
                   text: 'Generate lender-ready records and audit trails quickly.',
                 ),
                 const SizedBox(height: 14),
                 const _FeatureLine(
                   icon: Icons.group,
-                  title: 'Enterprise Permissions',
+                  title: 'farmers\' community',
                   text: 'Delegate access with clear role boundaries across your team.',
                 ),
               ],
@@ -530,10 +550,12 @@ class _AnimalPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAF8),
+        color: isDark ? colorScheme.surfaceContainerHighest.withOpacity(0.45) : const Color(0xFFF8FAF8),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -556,13 +578,18 @@ class _AnimalPreviewCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  name,
+                  style: TextStyle(fontWeight: FontWeight.w800, color: colorScheme.onSurface),
+                ),
                 Text(
                   note,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: good ? Colors.black45 : Colors.orange,
+                    color: good
+                        ? (isDark ? colorScheme.onSurface.withOpacity(0.68) : Colors.black45)
+                        : Colors.orange,
                   ),
                 ),
               ],
@@ -584,6 +611,7 @@ class _FeatureLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -600,9 +628,22 @@ class _FeatureLine extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(text, style: const TextStyle(color: Colors.black54, height: 1.4)),
+              Text(
+                text,
+                style: TextStyle(
+                  color: colorScheme.onSurface.withOpacity(0.74),
+                  height: 1.4,
+                ),
+              ),
             ],
           ),
         ),
@@ -625,7 +666,7 @@ class _FinalCtaSection extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Ready to Lead the New Agricultural Era?',
+            'ready to lead the new ai agricultural space',
             style: TextStyle(
               color: Colors.white,
               fontSize: 40,
@@ -636,7 +677,7 @@ class _FinalCtaSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Join the network of producers scaling with precision data and better market access.',
+            'join the network of livestock farmers scaling with precision data and better market access.',
             style: TextStyle(color: Colors.white70, fontSize: 18, height: 1.45),
             textAlign: TextAlign.center,
           ),
@@ -691,6 +732,22 @@ class _Footer extends StatelessWidget {
               Text('Marketplace', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
               Text('Pricing Plans', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
               Text('Knowledge Base', style: TextStyle(fontWeight: FontWeight.w700, color: colorScheme.onSurface.withOpacity(0.72))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed('/terms-of-service'),
+                child: const Text('Terms of Service'),
+              ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed('/privacy-policy'),
+                child: const Text('Privacy Policy'),
+              ),
             ],
           ),
           const SizedBox(height: 12),

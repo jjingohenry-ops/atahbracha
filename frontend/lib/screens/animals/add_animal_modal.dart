@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:typed_data';
 import '../../providers/animals_provider.dart';
 import '../../providers/settings_provider.dart';
+import 'widgets/animal_record_table_dialog.dart';
 
 class AddAnimalModal extends StatefulWidget {
   const AddAnimalModal({Key? key}) : super(key: key);
@@ -26,21 +27,36 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     'Rabbit',
     'Fish',
   ];
+  static const List<String> _monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   // Form field controllers
   late TextEditingController _nameController;
   late TextEditingController _tagController;
   late TextEditingController _breedController;
-  late TextEditingController _ageController;
   late TextEditingController _weightController;
-  late TextEditingController _pedigreeController;
-  late TextEditingController _medicalHistoryController;
   late TextEditingController _notesController;
+  List<Map<String, String>> _pedigreeRecords = <Map<String, String>>[];
+  List<Map<String, String>> _medicalHistoryRecords = <Map<String, String>>[];
 
   // Form state
   String _selectedSpecies = 'Cattle';
   String _selectedGender = 'MALE';
-  DateTime? _dateOfBirth;
+  int? _selectedBirthDay;
+  int? _selectedBirthMonth;
+  int? _selectedBirthYear;
   bool _isPregnant = false;
   bool _isUploadingPhoto = false;
   bool _isSaving = false;
@@ -58,10 +74,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     _nameController = TextEditingController();
     _tagController = TextEditingController();
     _breedController = TextEditingController();
-    _ageController = TextEditingController();
     _weightController = TextEditingController();
-    _pedigreeController = TextEditingController();
-    _medicalHistoryController = TextEditingController();
     _notesController = TextEditingController();
   }
 
@@ -70,26 +83,58 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     _nameController.dispose();
     _tagController.dispose();
     _breedController.dispose();
-    _ageController.dispose();
     _weightController.dispose();
-    _pedigreeController.dispose();
-    _medicalHistoryController.dispose();
     _notesController.dispose();
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _dateOfBirth ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+  List<int> _intRange(int start, int endInclusive) {
+    return List<int>.generate(
+      endInclusive - start + 1,
+      (index) => start + index,
     );
-    if (picked != null && picked != _dateOfBirth) {
-      setState(() {
-        _dateOfBirth = picked;
-      });
+  }
+
+  int _daysInMonth(int year, int month) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
+  DateTime? _selectedDateOfBirth() {
+    final day = _selectedBirthDay;
+    final month = _selectedBirthMonth;
+    final year = _selectedBirthYear;
+    if (day == null || month == null || year == null) {
+      return null;
     }
+
+    final maxDay = _daysInMonth(year, month);
+    if (day > maxDay) {
+      return null;
+    }
+
+    final dob = DateTime(year, month, day);
+    if (dob.isAfter(DateTime.now())) {
+      return null;
+    }
+    return dob;
+  }
+
+  int? _calculateAgeInMonths() {
+    final dob = _selectedDateOfBirth();
+    if (dob == null) {
+      return null;
+    }
+
+    final now = DateTime.now();
+    int ageMonths = (now.year - dob.year) * 12 + (now.month - dob.month);
+    if (now.day < dob.day) {
+      ageMonths -= 1;
+    }
+
+    if (ageMonths < 0) {
+      return null;
+    }
+    return ageMonths;
   }
 
   // Maps display species names to API enum values
@@ -110,6 +155,14 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     });
     final formValid = _formKey.currentState!.validate();
     if (!formValid) return;
+
+    final ageInMonths = _calculateAgeInMonths();
+    if (ageInMonths == null) {
+      setState(() {
+        _saveError = 'Provide a valid date of birth (day, month, and year).';
+      });
+      return;
+    }
 
     if (_selectedPhotoBytes == null) {
       return;
@@ -155,15 +208,19 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         final farmId = activeFarmId != null && activeFarmId.isNotEmpty
           ? activeFarmId
           : farms.first['id']!.toString();
+      final manualNotes = _notesController.text.trim();
+
       final animalData = <String, dynamic>{
         'farmId': farmId,
         'name': _nameController.text.trim(),
         'type': _speciesMap[_selectedSpecies] ?? _selectedSpecies.toUpperCase(),
         'gender': _selectedGender,
-        'age': int.tryParse(_ageController.text.trim()) ?? 0,
+        'age': ageInMonths,
         'weight': double.tryParse(_weightController.text.trim()) ?? 0.0,
         'photoUrl': _uploadedPhotoUrl,
-        if (_notesController.text.trim().isNotEmpty) 'notes': _notesController.text.trim(),
+        if (manualNotes.isNotEmpty) 'notes': manualNotes,
+        if (_pedigreeRecords.isNotEmpty) 'pedigreeRecords': _pedigreeRecords,
+        if (_medicalHistoryRecords.isNotEmpty) 'medicalHistoryRecords': _medicalHistoryRecords,
         if (_tagController.text.trim().isNotEmpty) 'tagNumber': _tagController.text.trim(),
         if (_breedController.text.trim().isNotEmpty) 'breed': _breedController.text.trim(),
       };
@@ -229,8 +286,141 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     }
   }
 
+  Future<void> _openPedigreeRecordsEditor() async {
+    final rows = await showAnimalRecordTableDialog(
+      context: context,
+      title: 'Pedigree Table',
+      subtitle: 'Capture sire, dam, and lineage records in structured rows.',
+      addRowLabel: 'Add pedigree row',
+      columns: pedigreeRecordColumns,
+      initialRows: _pedigreeRecords,
+    );
+
+    if (!mounted || rows == null) {
+      return;
+    }
+
+    setState(() {
+      _pedigreeRecords = rows;
+      _saveError = null;
+    });
+  }
+
+  Future<void> _openMedicalHistoryRecordsEditor() async {
+    final rows = await showAnimalRecordTableDialog(
+      context: context,
+      title: 'Medical History Table',
+      subtitle: 'Capture historical health events row by row.',
+      addRowLabel: 'Add medical row',
+      columns: medicalHistoryRecordColumns,
+      initialRows: _medicalHistoryRecords,
+    );
+
+    if (!mounted || rows == null) {
+      return;
+    }
+
+    setState(() {
+      _medicalHistoryRecords = rows;
+      _saveError = null;
+    });
+  }
+
+  String _summarizeRows(List<Map<String, String>> rows) {
+    if (rows.isEmpty) {
+      return 'No rows added yet';
+    }
+
+    final first = rows.first.values
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .join(' | ');
+    if (rows.length == 1) {
+      return first.isEmpty ? '1 row saved' : first;
+    }
+    final suffix = rows.length - 1;
+    return first.isEmpty ? '${rows.length} rows saved' : '$first (+$suffix more)';
+  }
+
+  Widget _buildStructuredTableLauncher({
+    required String title,
+    required String subtitle,
+    required int rowCount,
+    required VoidCallback onTap,
+    required List<Map<String, String>> rows,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final hasRows = rowCount > 0;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.72),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  hasRows
+                      ? 'Rows: $rowCount · ${_summarizeRows(rows)}'
+                      : 'Rows: 0 · ${_summarizeRows(rows)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: hasRows ? const Color(0xFF13EC5B) : colorScheme.onSurface.withOpacity(0.64),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: onTap,
+            icon: Icon(hasRows ? Icons.edit : Icons.table_chart_outlined, size: 17),
+            label: Text(hasRows ? 'Edit Table' : 'Open Table'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF13EC5B),
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     // bottom padding ensures keyboard doesn't cover the field
@@ -241,7 +431,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
       child: SingleChildScrollView(
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF6F8F6),
+            color: isDark ? colorScheme.surface : const Color(0xFFF6F8F6),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           constraints: BoxConstraints(
@@ -287,7 +477,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                   style: TextStyle(
                                     fontSize: isMobile ? 20 : 28,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                    color: colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -298,7 +488,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             'Register a new individual to the herd database',
                             style: TextStyle(
                               fontSize: isMobile ? 12 : 14,
-                              color: Colors.grey,
+                              color: colorScheme.onSurface.withOpacity(0.75),
                             ),
                           ),
                         ],
@@ -427,51 +617,38 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   child: Column(
                     children: [
                       if (isMobile) ...([
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTextField(
-                                label: 'Age (Months)',
-                                hint: '24',
-                                controller: _ageController,
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _buildTextField(
-                                label: 'Weight (kg)',
-                                hint: '450',
-                                controller: _weightController,
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                          ],
+                        _buildTextField(
+                          label: 'Weight (kg)',
+                          hint: '450',
+                          controller: _weightController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
                         const SizedBox(height: 12),
-                        _buildDateField(),
+                        _buildDateOfBirthDropdown(),
+                        const SizedBox(height: 12),
+                        _buildDerivedAgeDisplay(),
                       ]) else
-                        GridView.count(
-                          crossAxisCount: 3,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 24,
-                          mainAxisSpacing: 24,
-                          childAspectRatio: 3.8,
+                        Column(
                           children: [
-                            _buildTextField(
-                              label: 'Age (Months)',
-                              hint: '24',
-                              controller: _ageController,
-                              keyboardType: TextInputType.number,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                    label: 'Weight (kg)',
+                                    hint: '450',
+                                    controller: _weightController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  child: _buildDateOfBirthDropdown(),
+                                ),
+                              ],
                             ),
-                            _buildTextField(
-                              label: 'Weight (kg)',
-                              hint: '450',
-                              controller: _weightController,
-                              keyboardType: TextInputType.number,
-                            ),
-                            _buildDateField(),
+                            const SizedBox(height: 12),
+                            _buildDerivedAgeDisplay(),
                           ],
                         ),
                       const SizedBox(height: 24),
@@ -479,19 +656,22 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                         Column(
                           children: [
                             _buildGenderDropdown(),
-                            const SizedBox(height: 16),
-                            _buildToggle(
-                              title: 'Pregnancy Status',
-                              subtitle: 'Toggle if currently pregnant',
-                              value: _isPregnant,
-                              onChanged: (value) => setState(() => _isPregnant = value),
-                            ),
+                            if (_selectedGender == 'FEMALE') ...[
+                              const SizedBox(height: 16),
+                              _buildToggle(
+                                title: 'Pregnancy Status',
+                                subtitle: 'Toggle if currently pregnant',
+                                value: _isPregnant,
+                                onChanged: (value) => setState(() => _isPregnant = value),
+                              ),
+                            ],
                             const SizedBox(height: 12),
-                            _buildTextField(
-                              label: 'Pedigree / Lineage',
-                              hint: 'Mention sire and dam registration numbers...',
-                              controller: _pedigreeController,
-                              maxLines: 3,
+                            _buildStructuredTableLauncher(
+                              title: 'Pedigree / Lineage',
+                              subtitle: 'Use table rows for sire, dam, and related lineage.',
+                              rowCount: _pedigreeRecords.length,
+                              rows: _pedigreeRecords,
+                              onTap: _openPedigreeRecordsEditor,
                             ),
                           ],
                         )
@@ -503,23 +683,26 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                               child: Column(
                                 children: [
                                   _buildGenderDropdown(),
-                                  const SizedBox(height: 16),
-                                  _buildToggle(
-                                    title: 'Pregnancy Status',
-                                    subtitle: 'Toggle if currently pregnant',
-                                    value: _isPregnant,
-                                    onChanged: (value) => setState(() => _isPregnant = value),
-                                  ),
+                                  if (_selectedGender == 'FEMALE') ...[
+                                    const SizedBox(height: 16),
+                                    _buildToggle(
+                                      title: 'Pregnancy Status',
+                                      subtitle: 'Toggle if currently pregnant',
+                                      value: _isPregnant,
+                                      onChanged: (value) => setState(() => _isPregnant = value),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
                             const SizedBox(width: 24),
                             Expanded(
-                              child: _buildTextField(
-                                label: 'Pedigree / Lineage',
-                                hint: 'Mention sire and dam registration numbers...',
-                                controller: _pedigreeController,
-                                maxLines: 4,
+                              child: _buildStructuredTableLauncher(
+                                title: 'Pedigree / Lineage',
+                                subtitle: 'Use table rows for sire, dam, and related lineage.',
+                                rowCount: _pedigreeRecords.length,
+                                rows: _pedigreeRecords,
+                                onTap: _openPedigreeRecordsEditor,
                               ),
                             ),
                           ],
@@ -535,11 +718,12 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   isMobile: isMobile,
                   child: Column(
                     children: [
-                      _buildTextField(
-                        label: 'Medical History',
-                        hint: 'Past illnesses, vaccinations, or surgeries...',
-                        controller: _medicalHistoryController,
-                        maxLines: 3,
+                      _buildStructuredTableLauncher(
+                        title: 'Medical History',
+                        subtitle: 'Use table rows for treatment dates, conditions, and outcomes.',
+                        rowCount: _medicalHistoryRecords.length,
+                        rows: _medicalHistoryRecords,
+                        onTap: _openMedicalHistoryRecordsEditor,
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
@@ -553,14 +737,14 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 ),
                 const SizedBox(height: 16),
                 // Action Footer
-                Divider(color: Colors.grey[300]),
+                Divider(color: colorScheme.outline.withOpacity(0.35)),
                 const SizedBox(height: 16),
                 if (_isSaving)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         SizedBox(
                           width: 14,
                           height: 14,
@@ -569,7 +753,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                         SizedBox(width: 8),
                         Text(
                           'Saving animal record...',
-                          style: TextStyle(fontSize: 12, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
                         ),
                       ],
                     ),
@@ -580,15 +767,15 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF1F1),
+                      color: colorScheme.errorContainer.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFFFB3B3)),
+                      border: Border.all(color: colorScheme.error.withOpacity(0.35)),
                     ),
                     child: Text(
                       _saveError!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF8A1F1F),
+                        color: colorScheme.onErrorContainer,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -602,7 +789,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                       onPressed: _isSaving ? null : () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
-                        foregroundColor: Colors.grey[600],
+                        foregroundColor: colorScheme.onSurface.withOpacity(0.75),
                         elevation: 0,
                         padding: EdgeInsets.symmetric(
                           horizontal: isMobile ? 24 : 32,
@@ -670,40 +857,166 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     );
   }
 
-  Widget _buildDateField() {
-    return GestureDetector(
-      onTap: () => _selectDate(context),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(8),
+  Widget _buildDateOfBirthDropdown() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final currentYear = DateTime.now().year;
+    final years = _intRange(currentYear - 80, currentYear).reversed.toList();
+    final selectedYear = _selectedBirthYear ?? currentYear;
+    final selectedMonth = _selectedBirthMonth ?? 1;
+    final dayLimit = _daysInMonth(selectedYear, selectedMonth);
+    final days = _intRange(1, dayLimit);
+
+    final labelStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: colorScheme.onSurface.withOpacity(0.85),
+    );
+
+    InputDecoration dropdownDecoration(String hint) {
+      return InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(
+          color: colorScheme.onSurface.withOpacity(0.65),
+          fontWeight: FontWeight.w500,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.4)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: Color(0xFF13EC5B), width: 1.4),
+        ),
+        fillColor: theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
+            : colorScheme.surface,
+        filled: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Date of Birth *', style: labelStyle),
+        const SizedBox(height: 8),
+        Row(
           children: [
-            const Text(
-              'Date of Birth',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey,
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: _selectedBirthDay,
+                validator: (_) => _selectedDateOfBirth() == null ? 'Day' : null,
+                items: days
+                    .map((day) => DropdownMenuItem<int>(value: day, child: Text(day.toString())))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBirthDay = value;
+                    _saveError = null;
+                  });
+                },
+                decoration: dropdownDecoration('Day'),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              _dateOfBirth != null
-                  ? '${_dateOfBirth!.year}-${_dateOfBirth!.month.toString().padLeft(2, '0')}-${_dateOfBirth!.day.toString().padLeft(2, '0')}'
-                  : 'Select date',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF13EC5B),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: _selectedBirthMonth,
+                validator: (value) => value == null ? 'Month' : null,
+                items: List<int>.generate(12, (index) => index + 1)
+                    .map(
+                      (month) => DropdownMenuItem<int>(
+                        value: month,
+                        child: Text(_monthNames[month - 1]),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _selectedBirthMonth = value;
+                    final year = _selectedBirthYear ?? currentYear;
+                    final maxDay = _daysInMonth(year, value);
+                    if (_selectedBirthDay != null && _selectedBirthDay! > maxDay) {
+                      _selectedBirthDay = maxDay;
+                    }
+                    _saveError = null;
+                  });
+                },
+                decoration: dropdownDecoration('Month'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: DropdownButtonFormField<int>(
+                value: _selectedBirthYear,
+                validator: (value) => value == null ? 'Year' : null,
+                items: years
+                    .map(
+                      (year) => DropdownMenuItem<int>(
+                        value: year,
+                        child: Text(year.toString()),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _selectedBirthYear = value;
+                    final month = _selectedBirthMonth ?? 1;
+                    final maxDay = _daysInMonth(value, month);
+                    if (_selectedBirthDay != null && _selectedBirthDay! > maxDay) {
+                      _selectedBirthDay = maxDay;
+                    }
+                    _saveError = null;
+                  });
+                },
+                decoration: dropdownDecoration('Year'),
               ),
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _buildDerivedAgeDisplay() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final ageInMonths = _calculateAgeInMonths();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.34)
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.schedule, size: 18, color: colorScheme.onSurface.withOpacity(0.78)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              ageInMonths == null
+                  ? 'Age will auto-calculate after selecting date of birth'
+                  : 'Auto-calculated age: $ageInMonths months',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withOpacity(0.84),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -714,11 +1027,16 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     required bool isMobile,
     required Widget child,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!),
+        color: theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.36)
+            : colorScheme.surface,
+        border: Border.all(color: colorScheme.outline.withOpacity(0.35)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -740,7 +1058,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 style: TextStyle(
                   fontSize: isMobile ? 14 : 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ],
@@ -761,16 +1079,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     bool hasError = false,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final borderColor = hasError
         ? Colors.red
         : isSelected
             ? const Color(0xFF13EC5B)
-            : Colors.grey[400]!;
+        : colorScheme.outline.withOpacity(0.45);
     final iconColor = hasError
         ? Colors.red
         : isSelected
             ? const Color(0xFF13EC5B)
-            : Colors.grey[400]!;
+        : colorScheme.onSurface.withOpacity(0.55);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -780,7 +1100,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           decoration: BoxDecoration(
             border: Border.all(color: borderColor, width: 2),
             borderRadius: BorderRadius.circular(12),
-            color: Colors.white,
+            color: theme.brightness == Brightness.dark
+                ? colorScheme.surfaceContainerHighest.withOpacity(0.35)
+                : colorScheme.surface,
           ),
           child: Material(
             color: Colors.transparent,
@@ -831,7 +1153,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: hasError ? Colors.red : Colors.black87,
+                              color: hasError
+                                  ? Colors.red
+                                  : colorScheme.onSurface.withOpacity(0.9),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -840,7 +1164,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             subtitle,
                             style: TextStyle(
                               fontSize: 11,
-                              color: hasError ? Colors.red[300] : Colors.grey,
+                              color: hasError
+                                  ? Colors.red[300]
+                                  : colorScheme.onSurface.withOpacity(0.65),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -863,7 +1189,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             padding: const EdgeInsets.only(top: 6, left: 4),
             child: Text(
               'Tap image or pen icon to change',
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 11,
+                color: colorScheme.onSurface.withOpacity(0.68),
+              ),
             ),
           ),
       ],
@@ -878,16 +1207,19 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     TextInputType keyboardType = TextInputType.text,
     bool isRequired = false,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         RichText(
           text: TextSpan(
             text: label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.86),
             ),
             children: isRequired
                 ? const [TextSpan(text: ' *', style: TextStyle(color: Colors.red))]
@@ -905,47 +1237,29 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(
-              color: Colors.grey.withOpacity(0.35),
+              color: colorScheme.onSurface.withOpacity(0.65),
               fontWeight: FontWeight.w400,
             ),
-            border: OutlineInputBorder(
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdown({
-    required String label,
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: value,
-          items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderSide: BorderSide(color: Color(0xFF13EC5B), width: 1.4),
+            ),
+            errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.error),
             ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: colorScheme.error, width: 1.4),
+            ),
+            fillColor: theme.brightness == Brightness.dark
+                ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
+                : colorScheme.surface,
+            filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ),
@@ -954,15 +1268,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
   }
 
   Widget _buildGenderDropdown() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Gender',
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface.withOpacity(0.86),
           ),
         ),
         const SizedBox(height: 8),
@@ -974,13 +1291,26 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           ],
           onChanged: (value) {
             if (value == null) return;
-            setState(() => _selectedGender = value);
+            setState(() {
+              _selectedGender = value;
+              if (_selectedGender == 'MALE') {
+                _isPregnant = false;
+              }
+            });
           },
           decoration: InputDecoration(
-            border: OutlineInputBorder(
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
             ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              borderSide: BorderSide(color: Color(0xFF13EC5B), width: 1.4),
+            ),
+            fillColor: theme.brightness == Brightness.dark
+                ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
+                : colorScheme.surface,
+            filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           ),
         ),
@@ -989,15 +1319,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
   }
 
   Widget _buildSpeciesSelector({required String label}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface.withOpacity(0.86),
           ),
         ),
         const SizedBox(height: 8),
@@ -1006,10 +1339,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           borderRadius: BorderRadius.circular(8),
           child: InputDecorator(
             decoration: InputDecoration(
-              border: OutlineInputBorder(
+              enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
               ),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(8)),
+                borderSide: BorderSide(color: Color(0xFF13EC5B), width: 1.4),
+              ),
+              fillColor: theme.brightness == Brightness.dark
+                  ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
+                  : colorScheme.surface,
+              filled: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             child: Row(
@@ -1017,10 +1358,13 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 Expanded(
                   child: Text(
                     _selectedSpecies,
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurface.withOpacity(0.9),
+                    ),
                   ),
                 ),
-                const Icon(Icons.arrow_drop_down),
+                Icon(Icons.arrow_drop_down, color: colorScheme.onSurface.withOpacity(0.8)),
               ],
             ),
           ),
@@ -1111,11 +1455,16 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     required bool value,
     required Function(bool) onChanged,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[200]!),
+        color: theme.brightness == Brightness.dark
+            ? colorScheme.surfaceContainerHighest.withOpacity(0.34)
+            : colorScheme.surface,
+        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -1126,11 +1475,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withOpacity(0.72),
+                ),
               ),
             ],
           ),

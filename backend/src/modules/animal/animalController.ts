@@ -20,6 +20,88 @@ if (config.AWS_ACCESS_KEY_ID && config.AWS_SECRET_ACCESS_KEY) {
 
 const s3Client = new S3Client(s3ClientConfig);
 
+type StructuredField = {
+  key: string;
+  maxLength: number;
+};
+
+const PEDIGREE_FIELDS: StructuredField[] = [
+  { key: 'relation', maxLength: 40 },
+  { key: 'name', maxLength: 120 },
+  { key: 'tagNumber', maxLength: 64 },
+  { key: 'breed', maxLength: 120 },
+  { key: 'notes', maxLength: 300 },
+];
+
+const MEDICAL_HISTORY_FIELDS: StructuredField[] = [
+  { key: 'date', maxLength: 32 },
+  { key: 'condition', maxLength: 120 },
+  { key: 'treatment', maxLength: 160 },
+  { key: 'veterinarian', maxLength: 120 },
+  { key: 'notes', maxLength: 300 },
+];
+
+const MAX_STRUCTURED_ROWS = 100;
+
+const normalizeStructuredRecords = (
+  value: unknown,
+  fields: StructuredField[],
+  label: string,
+): Array<Record<string, string>> | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  if (value.length > MAX_STRUCTURED_ROWS) {
+    throw new Error(`${label} supports up to ${MAX_STRUCTURED_ROWS} rows`);
+  }
+
+  const allowedKeys = new Set(fields.map((field) => field.key));
+
+  return value
+    .map((row, index) => {
+      if (row === null || typeof row !== 'object' || Array.isArray(row)) {
+        throw new Error(`${label} row ${index + 1} must be an object`);
+      }
+
+      const rawRow = row as Record<string, unknown>;
+      const normalizedRow: Record<string, string> = {};
+
+      for (const key of Object.keys(rawRow)) {
+        if (!allowedKeys.has(key)) {
+          throw new Error(`${label} row ${index + 1} contains unsupported field "${key}"`);
+        }
+      }
+
+      for (const field of fields) {
+        const rawValue = rawRow[field.key];
+        if (rawValue === undefined || rawValue === null) {
+          continue;
+        }
+
+        const textValue = rawValue.toString().trim();
+        if (!textValue) {
+          continue;
+        }
+
+        if (textValue.length > field.maxLength) {
+          throw new Error(
+            `${label} row ${index + 1} field "${field.key}" exceeds ${field.maxLength} characters`,
+          );
+        }
+
+        normalizedRow[field.key] = textValue;
+      }
+
+      return normalizedRow;
+    })
+    .filter((row) => Object.keys(row).length > 0);
+};
+
 export const getAnimals = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.uid;
@@ -87,6 +169,26 @@ export const addAnimal = async (req: Request, res: Response) => {
     const gender = req.body?.gender?.toString().trim().toUpperCase();
     const age = Number(req.body?.age);
     const weight = Number(req.body?.weight);
+    const tagNumber = req.body?.tagNumber != null ? req.body.tagNumber.toString().trim() : '';
+    const breed = req.body?.breed != null ? req.body.breed.toString().trim() : '';
+    let pedigreeRecords: Array<Record<string, string>> | null;
+    let medicalHistoryRecords: Array<Record<string, string>> | null;
+
+    try {
+      pedigreeRecords = normalizeStructuredRecords(
+        req.body?.pedigreeRecords,
+        PEDIGREE_FIELDS,
+        'Pedigree records',
+      );
+      medicalHistoryRecords = normalizeStructuredRecords(
+        req.body?.medicalHistoryRecords,
+        MEDICAL_HISTORY_FIELDS,
+        'Medical history records',
+      );
+    } catch (validationError) {
+      const message = validationError instanceof Error ? validationError.message : 'Invalid structured records';
+      return res.status(400).json({ success: false, error: message });
+    }
 
     const allowedTypes = new Set([
       'DOG',
@@ -122,6 +224,14 @@ export const addAnimal = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Invalid animal weight' });
     }
 
+    if (tagNumber.length > 64) {
+      return res.status(400).json({ success: false, error: 'Tag number must be 64 characters or less' });
+    }
+
+    if (breed.length > 120) {
+      return res.status(400).json({ success: false, error: 'Breed must be 120 characters or less' });
+    }
+
     const animal = await prisma.animal.create({
       data: {
         farmId: farm.id,
@@ -130,6 +240,14 @@ export const addAnimal = async (req: Request, res: Response) => {
         gender: gender as any,
         age,
         weight,
+        tagNumber: tagNumber.length > 0 ? tagNumber : null,
+        breed: breed.length > 0 ? breed : null,
+        ...(pedigreeRecords !== null && pedigreeRecords.length > 0
+          ? { pedigreeRecords }
+          : {}),
+        ...(medicalHistoryRecords !== null && medicalHistoryRecords.length > 0
+          ? { medicalHistoryRecords }
+          : {}),
         photoUrl: req.body?.photoUrl?.toString().trim() || null,
         videoUrl: req.body?.videoUrl?.toString().trim() || null,
         notes: req.body?.notes?.toString().trim() || null,
@@ -239,6 +357,62 @@ export const updateAnimal = async (req: Request, res: Response) => {
     if (req.body?.notes !== undefined) {
       const notes = req.body.notes?.toString().trim();
       data.notes = notes && notes.length > 0 ? notes : null;
+    }
+
+    if (req.body?.tagNumber !== undefined) {
+      if (req.body.tagNumber === null) {
+        data.tagNumber = null;
+      } else {
+        const tagNumber = req.body.tagNumber?.toString().trim();
+        if (tagNumber.length > 64) {
+          return res.status(400).json({ success: false, error: 'Tag number must be 64 characters or less' });
+        }
+        data.tagNumber = tagNumber && tagNumber.length > 0 ? tagNumber : null;
+      }
+    }
+
+    if (req.body?.breed !== undefined) {
+      if (req.body.breed === null) {
+        data.breed = null;
+      } else {
+        const breed = req.body.breed?.toString().trim();
+        if (breed.length > 120) {
+          return res.status(400).json({ success: false, error: 'Breed must be 120 characters or less' });
+        }
+        data.breed = breed && breed.length > 0 ? breed : null;
+      }
+    }
+
+    if (req.body?.pedigreeRecords !== undefined) {
+      try {
+        const normalizedPedigree = normalizeStructuredRecords(
+          req.body.pedigreeRecords,
+          PEDIGREE_FIELDS,
+          'Pedigree records',
+        );
+        data.pedigreeRecords =
+          normalizedPedigree !== null && normalizedPedigree.length > 0 ? normalizedPedigree : null;
+      } catch (validationError) {
+        const message = validationError instanceof Error ? validationError.message : 'Invalid pedigree records';
+        return res.status(400).json({ success: false, error: message });
+      }
+    }
+
+    if (req.body?.medicalHistoryRecords !== undefined) {
+      try {
+        const normalizedMedicalHistory = normalizeStructuredRecords(
+          req.body.medicalHistoryRecords,
+          MEDICAL_HISTORY_FIELDS,
+          'Medical history records',
+        );
+        data.medicalHistoryRecords =
+          normalizedMedicalHistory !== null && normalizedMedicalHistory.length > 0
+            ? normalizedMedicalHistory
+            : null;
+      } catch (validationError) {
+        const message = validationError instanceof Error ? validationError.message : 'Invalid medical history records';
+        return res.status(400).json({ success: false, error: message });
+      }
     }
 
     if (Object.keys(data).length === 0) {

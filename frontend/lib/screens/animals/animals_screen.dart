@@ -10,6 +10,7 @@ import '../../core/services/prescription_service.dart';
 import '../../providers/animals_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import 'widgets/animal_record_table_dialog.dart';
 
 class AnimalsScreen extends StatefulWidget {
   const AnimalsScreen({super.key});
@@ -401,7 +402,8 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
 
   late Map<String, dynamic> _animal;
   late TextEditingController _notesController;
-  late TextEditingController _pedigreeController;
+  List<Map<String, String>> _pedigreeRecords = <Map<String, String>>[];
+  List<Map<String, String>> _medicalHistoryRecords = <Map<String, String>>[];
 
   final Map<String, bool> _dailyChecklist = <String, bool>{
     'Morning feeding': false,
@@ -425,7 +427,14 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     super.initState();
     _animal = Map<String, dynamic>.from(widget.initialAnimal);
     _notesController = TextEditingController(text: (_animal['notes'] ?? '').toString());
-    _pedigreeController = TextEditingController(text: (_animal['pedigree'] ?? '').toString());
+    _pedigreeRecords = parseAnimalRecordRows(
+      raw: _animal['pedigreeRecords'],
+      columns: pedigreeRecordColumns,
+    );
+    _medicalHistoryRecords = parseAnimalRecordRows(
+      raw: _animal['medicalHistoryRecords'],
+      columns: medicalHistoryRecordColumns,
+    );
 
     final heroPhoto = _resolvePhotoUrl(_animal['photoUrl']?.toString());
     if (heroPhoto != null) {
@@ -442,7 +451,6 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   @override
   void dispose() {
     _notesController.dispose();
-    _pedigreeController.dispose();
     super.dispose();
   }
 
@@ -489,7 +497,7 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                 const SizedBox(height: 12),
                 _buildTrendSection(),
                 const SizedBox(height: 12),
-                _buildNotesAndPedigreeSection(),
+                _buildRecordsSection(),
                 const SizedBox(height: 12),
                 _buildMediaGallery(heroPhoto),
                 const SizedBox(height: 12),
@@ -1452,9 +1460,114 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     );
   }
 
-  Widget _buildNotesAndPedigreeSection() {
+  Future<void> _openPedigreeRecordsEditor() async {
+    final rows = await showAnimalRecordTableDialog(
+      context: context,
+      title: 'Pedigree Table',
+      subtitle: 'Capture sire, dam, and lineage records in structured rows.',
+      addRowLabel: 'Add pedigree row',
+      columns: pedigreeRecordColumns,
+      initialRows: _pedigreeRecords,
+    );
+
+    if (!mounted || rows == null) {
+      return;
+    }
+
+    setState(() {
+      _pedigreeRecords = rows;
+    });
+  }
+
+  Future<void> _openMedicalHistoryRecordsEditor() async {
+    final rows = await showAnimalRecordTableDialog(
+      context: context,
+      title: 'Medical History Table',
+      subtitle: 'Capture historical health events row by row.',
+      addRowLabel: 'Add medical row',
+      columns: medicalHistoryRecordColumns,
+      initialRows: _medicalHistoryRecords,
+    );
+
+    if (!mounted || rows == null) {
+      return;
+    }
+
+    setState(() {
+      _medicalHistoryRecords = rows;
+    });
+  }
+
+  String _recordRowsPreview(List<Map<String, String>> rows) {
+    if (rows.isEmpty) {
+      return 'No rows added yet';
+    }
+
+    final first = rows.first.values
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .join(' | ');
+    if (rows.length == 1) {
+      return first.isEmpty ? '1 row saved' : first;
+    }
+    return first.isEmpty ? '${rows.length} rows saved' : '$first (+${rows.length - 1} more)';
+  }
+
+  Widget _buildRecordTableLauncher({
+    required String label,
+    required String helper,
+    required List<Map<String, String>> rows,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasRows = rows.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(
+                  helper,
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Rows: ${rows.length} · ${_recordRowsPreview(rows)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: hasRows ? const Color(0xFF2E9A57) : colorScheme.onSurface.withOpacity(0.65),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: onTap,
+            icon: Icon(hasRows ? Icons.edit : Icons.table_chart_outlined, size: 17),
+            label: Text(hasRows ? 'Edit Table' : 'Open Table'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordsSection() {
     return _sectionCard(
-      title: 'Notes & Pedigree',
+      title: 'Notes, Pedigree & Medical History',
       icon: Icons.edit_note_outlined,
       child: Column(
         children: [
@@ -1475,13 +1588,18 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          TextField(
-            controller: _pedigreeController,
-            minLines: 2,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Pedigree',
-            ),
+          _buildRecordTableLauncher(
+            label: 'Pedigree Table',
+            helper: 'Open a popup table for lineage records.',
+            rows: _pedigreeRecords,
+            onTap: _openPedigreeRecordsEditor,
+          ),
+          const SizedBox(height: 10),
+          _buildRecordTableLauncher(
+            label: 'Medical History Table',
+            helper: 'Open a popup table for historical health entries.',
+            rows: _medicalHistoryRecords,
+            onTap: _openMedicalHistoryRecordsEditor,
           ),
           const SizedBox(height: 10),
           Align(
@@ -1737,7 +1855,8 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
       widget.animalId,
       {
         'notes': _notesController.text.trim(),
-        'pedigree': _pedigreeController.text.trim(),
+        'pedigreeRecords': _pedigreeRecords,
+        'medicalHistoryRecords': _medicalHistoryRecords,
       },
       farmId: settings.activeFarmId,
     );

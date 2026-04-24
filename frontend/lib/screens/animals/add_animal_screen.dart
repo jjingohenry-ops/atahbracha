@@ -470,15 +470,22 @@ class _AddAnimalScreenState extends State<AddAnimalScreen> {
                       'Gender',
                       'Male / Female',
                       _isMale,
-                      (value) => setState(() => _isMale = value),
+                      (value) => setState(() {
+                        _isMale = value;
+                        if (_isMale) {
+                          _isPregnant = false;
+                        }
+                      }),
                     ),
-                    const SizedBox(height: 16),
-                    _buildToggleControl(
-                      'Pregnancy Status',
-                      'Toggle if currently pregnant',
-                      _isPregnant,
-                      (value) => setState(() => _isPregnant = value),
-                    ),
+                    if (!_isMale) ...[
+                      const SizedBox(height: 16),
+                      _buildToggleControl(
+                        'Pregnancy Status',
+                        'Toggle if currently pregnant',
+                        _isPregnant,
+                        (value) => setState(() => _isPregnant = value),
+                      ),
+                    ],
                   ],
                 ),
               ),
