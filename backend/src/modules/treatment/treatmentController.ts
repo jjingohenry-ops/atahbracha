@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { resolveDatabaseUserId } from '../../utils/resolveDatabaseUserId';
+import { limitedText, optionalLimitedText, productionError } from '../../utils/input';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,12 @@ export const addReminder = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { title, date, time, dosage, notes, farmId } = req.body;
+    const { date, farmId } = req.body;
+    const title = limitedText(req.body?.title || 'Untitled', 160);
+    const time = optionalLimitedText(req.body?.time, 32);
+    const dosage = optionalLimitedText(req.body?.dosage, 120);
+    const notes = optionalLimitedText(req.body?.notes, 1000);
+    const reminderDate = new Date(date);
 
     if (!farmId || typeof farmId !== 'string') {
       return res.status(400).json({ success: false, error: 'farmId is required' });
@@ -73,20 +79,24 @@ export const addReminder = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'You cannot add reminders to this farm' });
     }
 
+    if (Number.isNaN(reminderDate.getTime())) {
+      return res.status(400).json({ success: false, error: 'A valid reminder date is required' });
+    }
+
     const reminder = await (prisma as any).reminder.create({
       data: {
         userId,
         farmId,
-        title: title || 'Untitled',
-        date: new Date(date),
-        time: time || null,
-        dosage: dosage || null,
-        notes: notes || null,
+        title,
+        date: reminderDate,
+        time,
+        dosage,
+        notes,
       },
     });
     res.status(201).json({ success: true, data: reminder });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to add reminder', details: error });
+    res.status(500).json(productionError(error, 'Failed to add reminder'));
   }
 };
 

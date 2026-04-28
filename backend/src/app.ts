@@ -15,6 +15,7 @@ import { aiRoutes } from './modules/ai/aiRoutes';
 import { chatRoutes } from './modules/chat/chatRoutes';
 import { insuranceRoutes } from './modules/insurance/insuranceRoutes';
 import { prescriptionRoutes } from './modules/prescription/prescriptionRoutes';
+import { createRateLimiter } from './middlewares/rateLimit';
 
 const app = express();
 
@@ -63,6 +64,12 @@ app.use(cors({
 
 // Compression middleware
 app.use(compression());
+
+app.use('/api', createRateLimiter({
+  windowMs: config.API_RATE_LIMIT_WINDOW_MS,
+  max: config.API_RATE_LIMIT_MAX,
+  keyPrefix: 'api',
+}));
 
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -114,7 +121,11 @@ app.get('/marketing', (_req, res) => {
 console.log('🔧 Registering routes...');
 console.log('remindersRoutes:', typeof remindersRoutes, remindersRoutes);
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', createRateLimiter({
+  windowMs: config.API_RATE_LIMIT_WINDOW_MS,
+  max: config.AUTH_RATE_LIMIT_MAX,
+  keyPrefix: 'auth',
+}), authRoutes);
 console.log('✅ Auth routes registered');
 app.use('/api/dashboard', dashboardRoutes);
 console.log('✅ Dashboard routes registered');

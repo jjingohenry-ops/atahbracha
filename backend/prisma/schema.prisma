@@ -154,6 +154,22 @@ model Prescription {
   @@map("prescriptions")
 }
 
+model PrescriptionDrug {
+  id                          String   @id @default(cuid())
+  name                        String   @unique
+  category                    String
+  defaultDosage               String
+  defaultFrequencyPerDay      Int      @default(1)
+  defaultDurationDays         Int      @default(1)
+  defaultWithdrawalPeriodDays Int?
+  supportedSpecies            Json?
+  notes                       String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@map("prescription_drugs")
+}
+
 model PrescriptionItem {
   id                  String   @id @default(cuid())
   prescriptionId      String

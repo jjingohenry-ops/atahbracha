@@ -170,14 +170,18 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
 
     if (_isUploadingPhoto) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo is still uploading. Please wait...')),
+        const SnackBar(
+          content: Text('Photo is still uploading. Please wait...'),
+        ),
       );
       return;
     }
 
     if (_uploadedPhotoUrl == null || _uploadedPhotoUrl!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo upload failed. Tap the image to retry.')),
+        const SnackBar(
+          content: Text('Photo upload failed. Tap the image to retry.'),
+        ),
       );
       return;
     }
@@ -185,7 +189,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     setState(() => _isSaving = true);
 
     try {
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      final settingsProvider = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      );
       // Always refresh farm list from API to avoid stale/cross-account farm ids.
       await settingsProvider.fetchFarmLocations();
       final farms = (settingsProvider.farmLocations ?? [])
@@ -199,13 +206,17 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
 
       if (farms.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No owned farm found for this account. Please create a farm first.')),
+          const SnackBar(
+            content: Text(
+              'No owned farm found for this account. Please create a farm first.',
+            ),
+          ),
         );
         return;
       }
 
-        final activeFarmId = settingsProvider.activeFarmId;
-        final farmId = activeFarmId != null && activeFarmId.isNotEmpty
+      final activeFarmId = settingsProvider.activeFarmId;
+      final farmId = activeFarmId != null && activeFarmId.isNotEmpty
           ? activeFarmId
           : farms.first['id']!.toString();
       final manualNotes = _notesController.text.trim();
@@ -220,12 +231,19 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         'photoUrl': _uploadedPhotoUrl,
         if (manualNotes.isNotEmpty) 'notes': manualNotes,
         if (_pedigreeRecords.isNotEmpty) 'pedigreeRecords': _pedigreeRecords,
-        if (_medicalHistoryRecords.isNotEmpty) 'medicalHistoryRecords': _medicalHistoryRecords,
-        if (_tagController.text.trim().isNotEmpty) 'tagNumber': _tagController.text.trim(),
-        if (_breedController.text.trim().isNotEmpty) 'breed': _breedController.text.trim(),
+        if (_medicalHistoryRecords.isNotEmpty)
+          'medicalHistoryRecords': _medicalHistoryRecords,
+        if (_tagController.text.trim().isNotEmpty)
+          'tagNumber': _tagController.text.trim(),
+        if (_breedController.text.trim().isNotEmpty)
+          'breed': _breedController.text.trim(),
+        if (_selectedGender == 'FEMALE') 'isPregnant': _isPregnant,
       };
 
-      final animalsProvider = Provider.of<AnimalsProvider>(context, listen: false);
+      final animalsProvider = Provider.of<AnimalsProvider>(
+        context,
+        listen: false,
+      );
       final success = await animalsProvider.addAnimal(animalData);
 
       if (!mounted) return;
@@ -233,7 +251,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         Navigator.pop(context, true);
       } else {
         setState(() {
-          _saveError = animalsProvider.error ?? 'Failed to save animal. Please review your input and try again.';
+          _saveError =
+              animalsProvider.error ??
+              'Failed to save animal. Please review your input and try again.';
         });
       }
     } finally {
@@ -263,7 +283,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
       _saveError = null;
     });
 
-    final animalsProvider = Provider.of<AnimalsProvider>(context, listen: false);
+    final animalsProvider = Provider.of<AnimalsProvider>(
+      context,
+      listen: false,
+    );
     final uploadedUrl = await animalsProvider.uploadAnimalPhoto(picked);
 
     if (!mounted) return;
@@ -280,9 +303,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         _isUploadingPhoto = false;
         _photoUploadError = animalsProvider.error ?? 'Photo upload failed';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_photoUploadError!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_photoUploadError!)));
     }
   }
 
@@ -339,7 +362,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
       return first.isEmpty ? '1 row saved' : first;
     }
     final suffix = rows.length - 1;
-    return first.isEmpty ? '${rows.length} rows saved' : '$first (+$suffix more)';
+    return first.isEmpty
+        ? '${rows.length} rows saved'
+        : '$first (+$suffix more)';
   }
 
   Widget _buildStructuredTableLauncher({
@@ -393,7 +418,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                       : 'Rows: 0 · ${_summarizeRows(rows)}',
                   style: TextStyle(
                     fontSize: 11,
-                    color: hasRows ? const Color(0xFF13EC5B) : colorScheme.onSurface.withOpacity(0.64),
+                    color: hasRows
+                        ? const Color(0xFF13EC5B)
+                        : colorScheme.onSurface.withOpacity(0.64),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -403,7 +430,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           const SizedBox(width: 12),
           ElevatedButton.icon(
             onPressed: onTap,
-            icon: Icon(hasRows ? Icons.edit : Icons.table_chart_outlined, size: 17),
+            icon: Icon(
+              hasRows ? Icons.edit : Icons.table_chart_outlined,
+              size: 17,
+            ),
             label: Text(hasRows ? 'Edit Table' : 'Open Table'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF13EC5B),
@@ -505,21 +535,22 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                         icon: _isUploadingPhoto
                             ? Icons.cloud_upload
                             : _selectedPhotoBytes != null
-                                ? Icons.check_circle
-                                : Icons.add_a_photo,
+                            ? Icons.check_circle
+                            : Icons.add_a_photo,
                         title: _isUploadingPhoto
                             ? 'Uploading...'
                             : _selectedPhotoBytes != null
-                                ? 'Photo Added'
-                                : 'Animal Photo *',
+                            ? 'Photo Added'
+                            : 'Animal Photo *',
                         subtitle: _isUploadingPhoto
                             ? 'Sending to cloud storage'
                             : _selectedPhotoBytes != null
-                                ? (_selectedPhoto?.name ?? 'Tap to change')
-                                : 'PNG, JPG · 10MB',
+                            ? (_selectedPhoto?.name ?? 'Tap to change')
+                            : 'PNG, JPG · 10MB',
                         previewBytes: _selectedPhotoBytes,
                         isSelected: _selectedPhotoBytes != null,
-                        hasError: _submitAttempted && _selectedPhotoBytes == null,
+                        hasError:
+                            _submitAttempted && _selectedPhotoBytes == null,
                         onTap: _isUploadingPhoto ? () {} : _pickAndUploadPhoto,
                       ),
                     ),
@@ -566,7 +597,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: _buildSpeciesSelector(label: 'Species'),
+                                  child: _buildSpeciesSelector(
+                                    label: 'Species',
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -616,18 +649,22 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   isMobile: isMobile,
                   child: Column(
                     children: [
-                      if (isMobile) ...([
-                        _buildTextField(
-                          label: 'Weight (kg)',
-                          hint: '450',
-                          controller: _weightController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDateOfBirthDropdown(),
-                        const SizedBox(height: 12),
-                        _buildDerivedAgeDisplay(),
-                      ]) else
+                      if (isMobile)
+                        ...([
+                          _buildTextField(
+                            label: 'Weight (kg)',
+                            hint: '450',
+                            controller: _weightController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDateOfBirthDropdown(),
+                          const SizedBox(height: 12),
+                          _buildDerivedAgeDisplay(),
+                        ])
+                      else
                         Column(
                           children: [
                             Row(
@@ -638,13 +675,14 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                     label: 'Weight (kg)',
                                     hint: '450',
                                     controller: _weightController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
                                   ),
                                 ),
                                 const SizedBox(width: 24),
-                                Expanded(
-                                  child: _buildDateOfBirthDropdown(),
-                                ),
+                                Expanded(child: _buildDateOfBirthDropdown()),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -662,13 +700,15 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                 title: 'Pregnancy Status',
                                 subtitle: 'Toggle if currently pregnant',
                                 value: _isPregnant,
-                                onChanged: (value) => setState(() => _isPregnant = value),
+                                onChanged: (value) =>
+                                    setState(() => _isPregnant = value),
                               ),
                             ],
                             const SizedBox(height: 12),
                             _buildStructuredTableLauncher(
                               title: 'Pedigree / Lineage',
-                              subtitle: 'Use table rows for sire, dam, and related lineage.',
+                              subtitle:
+                                  'Use table rows for sire, dam, and related lineage.',
                               rowCount: _pedigreeRecords.length,
                               rows: _pedigreeRecords,
                               onTap: _openPedigreeRecordsEditor,
@@ -689,7 +729,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                       title: 'Pregnancy Status',
                                       subtitle: 'Toggle if currently pregnant',
                                       value: _isPregnant,
-                                      onChanged: (value) => setState(() => _isPregnant = value),
+                                      onChanged: (value) =>
+                                          setState(() => _isPregnant = value),
                                     ),
                                   ],
                                 ],
@@ -699,7 +740,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                             Expanded(
                               child: _buildStructuredTableLauncher(
                                 title: 'Pedigree / Lineage',
-                                subtitle: 'Use table rows for sire, dam, and related lineage.',
+                                subtitle:
+                                    'Use table rows for sire, dam, and related lineage.',
                                 rowCount: _pedigreeRecords.length,
                                 rows: _pedigreeRecords,
                                 onTap: _openPedigreeRecordsEditor,
@@ -720,7 +762,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     children: [
                       _buildStructuredTableLauncher(
                         title: 'Medical History',
-                        subtitle: 'Use table rows for treatment dates, conditions, and outcomes.',
+                        subtitle:
+                            'Use table rows for treatment dates, conditions, and outcomes.',
                         rowCount: _medicalHistoryRecords.length,
                         rows: _medicalHistoryRecords,
                         onTap: _openMedicalHistoryRecordsEditor,
@@ -765,11 +808,16 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.errorContainer.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colorScheme.error.withOpacity(0.35)),
+                      border: Border.all(
+                        color: colorScheme.error.withOpacity(0.35),
+                      ),
                     ),
                     child: Text(
                       _saveError!,
@@ -781,15 +829,21 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     ),
                   ),
                 Wrap(
-                  alignment: isMobile ? WrapAlignment.center : WrapAlignment.end,
+                  alignment: isMobile
+                      ? WrapAlignment.center
+                      : WrapAlignment.end,
                   spacing: 12,
                   runSpacing: 12,
                   children: [
                     ElevatedButton(
-                      onPressed: _isSaving ? null : () => Navigator.pop(context),
+                      onPressed: _isSaving
+                          ? null
+                          : () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
-                        foregroundColor: colorScheme.onSurface.withOpacity(0.75),
+                        foregroundColor: colorScheme.onSurface.withOpacity(
+                          0.75,
+                        ),
                         elevation: 0,
                         padding: EdgeInsets.symmetric(
                           horizontal: isMobile ? 24 : 32,
@@ -831,7 +885,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black,
+                                    ),
                                   ),
                                 ),
                                 SizedBox(width: 8),
@@ -896,7 +952,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
             : colorScheme.surface,
         filled: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 10,
+        ),
       );
     }
 
@@ -912,7 +971,12 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 value: _selectedBirthDay,
                 validator: (_) => _selectedDateOfBirth() == null ? 'Day' : null,
                 items: days
-                    .map((day) => DropdownMenuItem<int>(value: day, child: Text(day.toString())))
+                    .map(
+                      (day) => DropdownMenuItem<int>(
+                        value: day,
+                        child: Text(day.toString()),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   setState(() {
@@ -942,7 +1006,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     _selectedBirthMonth = value;
                     final year = _selectedBirthYear ?? currentYear;
                     final maxDay = _daysInMonth(year, value);
-                    if (_selectedBirthDay != null && _selectedBirthDay! > maxDay) {
+                    if (_selectedBirthDay != null &&
+                        _selectedBirthDay! > maxDay) {
                       _selectedBirthDay = maxDay;
                     }
                     _saveError = null;
@@ -970,7 +1035,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     _selectedBirthYear = value;
                     final month = _selectedBirthMonth ?? 1;
                     final maxDay = _daysInMonth(value, month);
-                    if (_selectedBirthDay != null && _selectedBirthDay! > maxDay) {
+                    if (_selectedBirthDay != null &&
+                        _selectedBirthDay! > maxDay) {
                       _selectedBirthDay = maxDay;
                     }
                     _saveError = null;
@@ -1002,7 +1068,11 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
       ),
       child: Row(
         children: [
-          Icon(Icons.schedule, size: 18, color: colorScheme.onSurface.withOpacity(0.78)),
+          Icon(
+            Icons.schedule,
+            size: 18,
+            color: colorScheme.onSurface.withOpacity(0.78),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1084,12 +1154,12 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
     final borderColor = hasError
         ? Colors.red
         : isSelected
-            ? const Color(0xFF13EC5B)
+        ? const Color(0xFF13EC5B)
         : colorScheme.outline.withOpacity(0.45);
     final iconColor = hasError
         ? Colors.red
         : isSelected
-            ? const Color(0xFF13EC5B)
+        ? const Color(0xFF13EC5B)
         : colorScheme.onSurface.withOpacity(0.55);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1173,7 +1243,7 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                         ],
                       ),
                     ),
-              ),
+            ),
           ),
         ),
         if (hasError)
@@ -1222,7 +1292,12 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
               color: colorScheme.onSurface.withOpacity(0.86),
             ),
             children: isRequired
-                ? const [TextSpan(text: ' *', style: TextStyle(color: Colors.red))]
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ]
                 : [],
           ),
         ),
@@ -1232,7 +1307,8 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           maxLines: maxLines,
           keyboardType: keyboardType,
           validator: isRequired
-              ? (value) => (value == null || value.trim().isEmpty) ? 'Required' : null
+              ? (value) =>
+                    (value == null || value.trim().isEmpty) ? 'Required' : null
               : null,
           decoration: InputDecoration(
             hintText: hint,
@@ -1242,7 +1318,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.35),
+              ),
             ),
             focusedBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),
@@ -1260,7 +1338,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
                 : colorScheme.surface,
             filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
       ],
@@ -1301,7 +1382,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
           decoration: InputDecoration(
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
+              borderSide: BorderSide(
+                color: colorScheme.outline.withOpacity(0.35),
+              ),
             ),
             focusedBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(8)),
@@ -1311,7 +1394,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                 ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
                 : colorScheme.surface,
             filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
           ),
         ),
       ],
@@ -1341,7 +1427,9 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
             decoration: InputDecoration(
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.35)),
+                borderSide: BorderSide(
+                  color: colorScheme.outline.withOpacity(0.35),
+                ),
               ),
               focusedBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(8)),
@@ -1351,7 +1439,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                   ? colorScheme.surfaceContainerHighest.withOpacity(0.42)
                   : colorScheme.surface,
               filled: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
             child: Row(
               children: [
@@ -1364,7 +1455,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     ),
                   ),
                 ),
-                Icon(Icons.arrow_drop_down, color: colorScheme.onSurface.withOpacity(0.8)),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: colorScheme.onSurface.withOpacity(0.8),
+                ),
               ],
             ),
           ),
@@ -1386,7 +1480,10 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final filtered = _speciesOptions
-                .where((species) => species.toLowerCase().contains(query.toLowerCase()))
+                .where(
+                  (species) =>
+                      species.toLowerCase().contains(query.toLowerCase()),
+                )
                 .toList();
 
             return SafeArea(
@@ -1404,12 +1501,16 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                     children: [
                       const Text(
                         'Select Species',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
                         autofocus: true,
-                        onChanged: (value) => setModalState(() => query = value),
+                        onChanged: (value) =>
+                            setModalState(() => query = value),
                         decoration: const InputDecoration(
                           hintText: 'Search species',
                           prefixIcon: Icon(Icons.search),
@@ -1427,9 +1528,13 @@ class _AddAnimalModalState extends State<AddAnimalModal> {
                                   return ListTile(
                                     title: Text(species),
                                     trailing: species == _selectedSpecies
-                                        ? const Icon(Icons.check, color: Color(0xFF13EC5B))
+                                        ? const Icon(
+                                            Icons.check,
+                                            color: Color(0xFF13EC5B),
+                                          )
                                         : null,
-                                    onTap: () => Navigator.pop(sheetContext, species),
+                                    onTap: () =>
+                                        Navigator.pop(sheetContext, species),
                                   );
                                 },
                               ),

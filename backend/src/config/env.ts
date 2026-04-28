@@ -47,6 +47,11 @@ const config = {
   UPLOAD_DIR: process.env['UPLOAD_DIR'] || './src/public/uploads',
   MAX_FILE_SIZE: parseInt(process.env['MAX_FILE_SIZE'] || '10485760'), // 10MB
   ALLOWED_FILE_TYPES: process.env['ALLOWED_FILE_TYPES'] || 'image/jpeg,image/png,image/gif,video/mp4,video/webm',
+  API_RATE_LIMIT_WINDOW_MS: parseInt(process.env['API_RATE_LIMIT_WINDOW_MS'] || '60000'),
+  API_RATE_LIMIT_MAX: parseInt(process.env['API_RATE_LIMIT_MAX'] || '120'),
+  AUTH_RATE_LIMIT_MAX: parseInt(process.env['AUTH_RATE_LIMIT_MAX'] || '20'),
+  AI_RATE_LIMIT_MAX: parseInt(process.env['AI_RATE_LIMIT_MAX'] || '12'),
+  UPLOAD_RATE_LIMIT_MAX: parseInt(process.env['UPLOAD_RATE_LIMIT_MAX'] || '20'),
 
   // Sync
   SYNC_INTERVAL: parseInt(process.env['SYNC_INTERVAL'] || '30000'), // 30 seconds

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../core/network/api_base.dart';
@@ -94,9 +95,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _scrollToBottom();
 
     try {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token == null || token.trim().isEmpty) {
+        throw Exception('Not signed in');
+      }
+
       final response = await http.post(
         ApiBase.uri('/ai/chat'),
         headers: {
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
@@ -695,7 +702,6 @@ class _ChatMessage {
   final String text;
   final String time;
   final bool isError;
-  final bool isTyping;
   final String? aiAnimal;
 
   const _ChatMessage({
@@ -703,7 +709,6 @@ class _ChatMessage {
     required this.text,
     required this.time,
     this.isError = false,
-    this.isTyping = false,
     this.aiAnimal,
   });
 }

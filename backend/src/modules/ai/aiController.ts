@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import { z } from 'zod';
 import { config } from '../../config/env';
 
 const useEnvCredentials = (config.BEDROCK_USE_ENV_CREDENTIALS || 'false').toLowerCase() === 'true';
@@ -28,26 +29,28 @@ const buildBedrockClient = () => {
   });
 };
 
+const messageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(2000),
+});
+
+const chatRequestSchema = z.object({
+  messages: z.array(messageSchema).min(1).max(20),
+  systemPrompt: z.string().trim().max(1200).optional(),
+});
+
 export const chatWithBedrock = async (req: Request, res: Response) => {
   try {
-    const { messages, systemPrompt } = req.body;
-
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid request: messages array required',
-      });
-    }
+    const { messages, systemPrompt } = chatRequestSchema.parse(req.body);
 
     // Anthropic Messages API expects text content blocks and user/assistant roles.
     const formattedMessages = messages
-      .filter((msg: any) => (msg?.role === 'user' || msg?.role === 'assistant'))
-      .map((msg: any) => ({
+      .map((msg) => ({
         role: msg.role,
         content: [
           {
             type: 'text',
-            text: String(msg?.content ?? ''),
+            text: msg.content,
           },
         ],
       }));
@@ -60,8 +63,8 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
       body: JSON.stringify({
         anthropic_version: 'bedrock-2023-05-31',
         messages: formattedMessages,
-        system: systemPrompt || 'You are a helpful assistant.',
-        max_tokens: 1200,
+        system: systemPrompt || 'You are a helpful livestock assistant.',
+        max_tokens: 800,
         temperature: 0.7,
         top_p: 0.95,
       }),
@@ -91,18 +94,30 @@ export const chatWithBedrock = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid AI chat request',
+        details: error.issues,
+      });
+    }
+
     console.error('Bedrock API Error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to get AI response',
-      details: {
-        name: error.name,
-        message: error.message,
-        credentialSource: useEnvCredentials ? 'explicit-env-credentials' : 'default-provider-chain',
-        region: config.AWS_REGION || 'us-east-1',
-        modelId:
-          config.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
-      },
+      ...(config.NODE_ENV === 'production'
+        ? {}
+        : {
+            details: {
+              name: error.name,
+              message: error.message,
+              credentialSource: useEnvCredentials ? 'explicit-env-credentials' : 'default-provider-chain',
+              region: config.AWS_REGION || 'us-east-1',
+              modelId:
+                config.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0',
+            },
+          }),
     });
   }
 };

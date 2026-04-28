@@ -65,7 +65,9 @@ class PrescriptionItemEntry {
           : double.tryParse('${json['progress']}') ?? 0,
       status: (json['status'] ?? 'ACTIVE').toString().toUpperCase(),
       statusColor: (json['statusColor'] ?? 'YELLOW').toString().toUpperCase(),
-      nextDoseAt: json['nextDoseAt'] != null ? DateTime.tryParse(json['nextDoseAt'].toString()) : null,
+      nextDoseAt: json['nextDoseAt'] != null
+          ? DateTime.tryParse(json['nextDoseAt'].toString())
+          : null,
     );
   }
 
@@ -122,12 +124,18 @@ class PrescriptionEntry {
       progress: (json['progress'] is num)
           ? (json['progress'] as num).toDouble()
           : double.tryParse('${json['progress']}') ?? 0,
-      createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
+          DateTime.now(),
       items: (json['items'] is List)
           ? (json['items'] as List)
-              .whereType<Map>()
-              .map((item) => PrescriptionItemEntry.fromJson(Map<String, dynamic>.from(item)))
-              .toList()
+                .whereType<Map>()
+                .map(
+                  (item) => PrescriptionItemEntry.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList()
           : <PrescriptionItemEntry>[],
     );
   }
@@ -147,13 +155,53 @@ class PrescriptionEntry {
   }
 }
 
+class PrescriptionDrugEntry {
+  final String name;
+  final String category;
+  final String defaultDosage;
+  final int defaultFrequencyPerDay;
+  final int defaultDurationDays;
+  final int? defaultWithdrawalPeriodDays;
+  final String? notes;
+
+  PrescriptionDrugEntry({
+    required this.name,
+    required this.category,
+    required this.defaultDosage,
+    required this.defaultFrequencyPerDay,
+    required this.defaultDurationDays,
+    required this.defaultWithdrawalPeriodDays,
+    required this.notes,
+  });
+
+  factory PrescriptionDrugEntry.fromJson(Map<String, dynamic> json) {
+    return PrescriptionDrugEntry(
+      name: (json['name'] ?? '').toString(),
+      category: (json['category'] ?? 'Medication').toString(),
+      defaultDosage: (json['defaultDosage'] ?? '').toString(),
+      defaultFrequencyPerDay: (json['defaultFrequencyPerDay'] is num)
+          ? (json['defaultFrequencyPerDay'] as num).toInt()
+          : int.tryParse('${json['defaultFrequencyPerDay']}') ?? 1,
+      defaultDurationDays: (json['defaultDurationDays'] is num)
+          ? (json['defaultDurationDays'] as num).toInt()
+          : int.tryParse('${json['defaultDurationDays']}') ?? 1,
+      defaultWithdrawalPeriodDays: (json['defaultWithdrawalPeriodDays'] is num)
+          ? (json['defaultWithdrawalPeriodDays'] as num).toInt()
+          : int.tryParse('${json['defaultWithdrawalPeriodDays']}'),
+      notes: json['notes']?.toString(),
+    );
+  }
+}
+
 class PrescriptionService {
   static const String _queueKey = 'prescription_offline_queue';
 
-  String _cacheKeyForAnimal(String animalId) => 'prescriptions_animal_$animalId';
+  String _cacheKeyForAnimal(String animalId) =>
+      'prescriptions_animal_$animalId';
 
   Future<String?> _token() async {
-    final dynamic rawToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final dynamic rawToken = await FirebaseAuth.instance.currentUser
+        ?.getIdToken();
     final String token = rawToken?.toString() ?? '';
     if (token.trim().isEmpty) return null;
     return token;
@@ -180,14 +228,15 @@ class PrescriptionService {
         final data = (body['data'] as List?) ?? <dynamic>[];
         final items = data
             .whereType<Map>()
-            .map((raw) => PrescriptionEntry.fromJson(Map<String, dynamic>.from(raw)))
+            .map(
+              (raw) =>
+                  PrescriptionEntry.fromJson(Map<String, dynamic>.from(raw)),
+            )
             .toList();
 
-        await storage.cacheData(
-          _cacheKeyForAnimal(animalId),
-          {'items': items.map((e) => e.toJson()).toList()},
-          expiration: const Duration(days: 14),
-        );
+        await storage.cacheData(_cacheKeyForAnimal(animalId), {
+          'items': items.map((e) => e.toJson()).toList(),
+        }, expiration: const Duration(days: 14));
 
         return items;
       }
@@ -205,7 +254,37 @@ class PrescriptionService {
 
     return items
         .whereType<Map>()
-        .map((raw) => PrescriptionEntry.fromJson(Map<String, dynamic>.from(raw)))
+        .map(
+          (raw) => PrescriptionEntry.fromJson(Map<String, dynamic>.from(raw)),
+        )
+        .toList();
+  }
+
+  Future<List<PrescriptionDrugEntry>> fetchDrugCatalog() async {
+    final token = await _token();
+    if (token == null) return <PrescriptionDrugEntry>[];
+
+    final response = await http.get(
+      ApiBase.uri('/prescriptions/drugs'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      return <PrescriptionDrugEntry>[];
+    }
+
+    final body = json.decode(response.body);
+    final data = (body['data'] as List?) ?? <dynamic>[];
+    return data
+        .whereType<Map>()
+        .map(
+          (raw) =>
+              PrescriptionDrugEntry.fromJson(Map<String, dynamic>.from(raw)),
+        )
+        .where((drug) => drug.name.trim().isNotEmpty)
         .toList();
   }
 
@@ -253,29 +332,9 @@ class PrescriptionService {
         return true;
       }
 
-      await _enqueueOperation({
-        'type': 'create-prescription',
-        'payload': {
-          'animalId': animalId,
-          'diagnosis': diagnosis,
-          'vetName': vetName,
-          'notes': notes,
-          'items': items,
-        },
-      });
-      return true;
+      return false;
     } catch (_) {
-      await _enqueueOperation({
-        'type': 'create-prescription',
-        'payload': {
-          'animalId': animalId,
-          'diagnosis': diagnosis,
-          'vetName': vetName,
-          'notes': notes,
-          'items': items,
-        },
-      });
-      return true;
+      return false;
     }
   }
 
@@ -307,9 +366,7 @@ class PrescriptionService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: json.encode({
-          'scheduledFor': scheduledFor?.toIso8601String(),
-        }),
+        body: json.encode({'scheduledFor': scheduledFor?.toIso8601String()}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -379,7 +436,9 @@ class PrescriptionService {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
             },
-            body: json.encode({'operations': <dynamic>[operation]}),
+            body: json.encode({
+              'operations': <dynamic>[operation],
+            }),
           );
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -414,7 +473,11 @@ class PrescriptionService {
     await storage.saveStringList(_queueKey, queue);
   }
 
-  Future<void> _applyLocalMarkGiven(String animalId, String prescriptionId, String itemId) async {
+  Future<void> _applyLocalMarkGiven(
+    String animalId,
+    String prescriptionId,
+    String itemId,
+  ) async {
     final storage = await StorageService.getInstance();
     final key = _cacheKeyForAnimal(animalId);
     final cached = storage.getCachedData(key);
@@ -430,7 +493,9 @@ class PrescriptionService {
             ? item.totalDoses
             : item.completedDoses + 1;
         final remaining = item.totalDoses - completedDoses;
-        final progress = item.totalDoses <= 0 ? 1.0 : completedDoses / item.totalDoses;
+        final progress = item.totalDoses <= 0
+            ? 1.0
+            : completedDoses / item.totalDoses;
 
         return PrescriptionItemEntry(
           id: item.id,
@@ -466,10 +531,8 @@ class PrescriptionService {
       );
     }).toList();
 
-    await storage.cacheData(
-      key,
-      {'items': updated.map((entry) => entry.toJson()).toList()},
-      expiration: const Duration(days: 14),
-    );
+    await storage.cacheData(key, {
+      'items': updated.map((entry) => entry.toJson()).toList(),
+    }, expiration: const Duration(days: 14));
   }
 }

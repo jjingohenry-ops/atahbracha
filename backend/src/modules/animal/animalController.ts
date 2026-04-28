@@ -5,6 +5,8 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { config } from '../../config/env';
+import { addDays, getGestationReference } from './gestationLibrary';
+import { limitedText, optionalLimitedText, parseHttpUrl, productionError } from '../../utils/input';
 
 const prisma = new PrismaClient();
 const s3ClientConfig: ConstructorParameters<typeof S3Client>[0] = {
@@ -42,6 +44,15 @@ const MEDICAL_HISTORY_FIELDS: StructuredField[] = [
 ];
 
 const MAX_STRUCTURED_ROWS = 100;
+
+const truthy = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    return ['true', '1', 'yes', 'y'].includes(value.trim().toLowerCase());
+  }
+  if (typeof value === 'number') return value === 1;
+  return false;
+};
 
 const normalizeStructuredRecords = (
   value: unknown,
@@ -130,6 +141,12 @@ export const getAnimals = async (req: Request, res: Response) => {
         },
         ...(selectedFarmId ? { farmId: selectedFarmId } : {}),
       },
+      include: {
+        gestations: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -164,13 +181,17 @@ export const addAnimal = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'You cannot add animals to this farm' });
     }
 
-    const name = req.body?.name?.toString().trim();
+    const name = limitedText(req.body?.name, 120);
     const type = req.body?.type?.toString().trim().toUpperCase();
     const gender = req.body?.gender?.toString().trim().toUpperCase();
     const age = Number(req.body?.age);
     const weight = Number(req.body?.weight);
-    const tagNumber = req.body?.tagNumber != null ? req.body.tagNumber.toString().trim() : '';
-    const breed = req.body?.breed != null ? req.body.breed.toString().trim() : '';
+    const tagNumber = limitedText(req.body?.tagNumber, 64);
+    const breed = limitedText(req.body?.breed, 120);
+    const photoUrl = parseHttpUrl(req.body?.photoUrl);
+    const videoUrl = parseHttpUrl(req.body?.videoUrl);
+    const notes = optionalLimitedText(req.body?.notes, 3000);
+    const isPregnant = truthy(req.body?.isPregnant);
     let pedigreeRecords: Array<Record<string, string>> | null;
     let medicalHistoryRecords: Array<Record<string, string>> | null;
 
@@ -232,26 +253,74 @@ export const addAnimal = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Breed must be 120 characters or less' });
     }
 
-    const animal = await prisma.animal.create({
-      data: {
-        farmId: farm.id,
-        name,
-        type: type as any,
-        gender: gender as any,
-        age,
-        weight,
-        tagNumber: tagNumber.length > 0 ? tagNumber : null,
-        breed: breed.length > 0 ? breed : null,
-        ...(pedigreeRecords !== null && pedigreeRecords.length > 0
-          ? { pedigreeRecords }
-          : {}),
-        ...(medicalHistoryRecords !== null && medicalHistoryRecords.length > 0
-          ? { medicalHistoryRecords }
-          : {}),
-        photoUrl: req.body?.photoUrl?.toString().trim() || null,
-        videoUrl: req.body?.videoUrl?.toString().trim() || null,
-        notes: req.body?.notes?.toString().trim() || null,
-      },
+    const animal = await prisma.$transaction(async (tx) => {
+      const createdAnimal = await tx.animal.create({
+        data: {
+          farmId: farm.id,
+          name,
+          type: type as any,
+          gender: gender as any,
+          age,
+          weight,
+          tagNumber: tagNumber.length > 0 ? tagNumber : null,
+          breed: breed.length > 0 ? breed : null,
+          ...(pedigreeRecords !== null && pedigreeRecords.length > 0
+            ? { pedigreeRecords }
+            : {}),
+          ...(medicalHistoryRecords !== null && medicalHistoryRecords.length > 0
+            ? { medicalHistoryRecords }
+            : {}),
+          photoUrl,
+          videoUrl,
+          notes,
+        },
+      });
+
+      if (isPregnant && gender === 'FEMALE') {
+        const reference = getGestationReference(type, breed);
+        const startDate = new Date();
+        const expectedDate = addDays(startDate, reference.gestationDays);
+
+        await tx.gestation.create({
+          data: {
+            animalId: createdAnimal.id,
+            startDate,
+            expectedDate,
+            status: 'IN_PROGRESS' as any,
+            notes: `Auto-created from animal registration using ${reference.gestationDays}-day ${type.toLowerCase()} pregnancy reference.`,
+          },
+        });
+
+        const reminderDates = new Set<string>();
+        for (const offset of reference.checkupOffsetsBeforeDue) {
+          const reminderDate = addDays(expectedDate, -offset);
+          if (reminderDate > startDate) {
+            reminderDates.add(reminderDate.toISOString());
+          }
+        }
+        reminderDates.add(expectedDate.toISOString());
+
+        for (const isoDate of reminderDates) {
+          const reminderDate = new Date(isoDate);
+          const isDueDate = reminderDate.toDateString() === expectedDate.toDateString();
+          await tx.reminder.create({
+            data: {
+              userId,
+              farmId: farm.id,
+              title: isDueDate
+                ? `${createdAnimal.name} expected delivery`
+                : `${createdAnimal.name} pregnancy check`,
+              date: reminderDate,
+              time: '09:00',
+              notes: isDueDate
+                ? `Expected delivery based on ${reference.gestationDays}-day ${type.toLowerCase()} pregnancy reference.`
+                : `Auto reminder before expected delivery on ${expectedDate.toISOString().split('T')[0]}.`,
+            },
+          });
+        }
+      }
+
+      return createdAnimal;
     });
     res.status(201).json({ success: true, data: animal });
   } catch (error) {
@@ -292,7 +361,7 @@ export const updateAnimal = async (req: Request, res: Response) => {
     const data: Record<string, unknown> = {};
 
     if (req.body?.name !== undefined) {
-      const name = req.body.name?.toString().trim();
+      const name = limitedText(req.body.name, 120);
       if (!name) {
         return res.status(400).json({ success: false, error: 'Animal name is required' });
       }
@@ -345,25 +414,22 @@ export const updateAnimal = async (req: Request, res: Response) => {
     }
 
     if (req.body?.photoUrl !== undefined) {
-      const photoUrl = req.body.photoUrl?.toString().trim();
-      data.photoUrl = photoUrl && photoUrl.length > 0 ? photoUrl : null;
+      data.photoUrl = parseHttpUrl(req.body.photoUrl);
     }
 
     if (req.body?.videoUrl !== undefined) {
-      const videoUrl = req.body.videoUrl?.toString().trim();
-      data.videoUrl = videoUrl && videoUrl.length > 0 ? videoUrl : null;
+      data.videoUrl = parseHttpUrl(req.body.videoUrl);
     }
 
     if (req.body?.notes !== undefined) {
-      const notes = req.body.notes?.toString().trim();
-      data.notes = notes && notes.length > 0 ? notes : null;
+      data.notes = optionalLimitedText(req.body.notes, 3000);
     }
 
     if (req.body?.tagNumber !== undefined) {
       if (req.body.tagNumber === null) {
         data.tagNumber = null;
       } else {
-        const tagNumber = req.body.tagNumber?.toString().trim();
+        const tagNumber = limitedText(req.body.tagNumber, 64);
         if (tagNumber.length > 64) {
           return res.status(400).json({ success: false, error: 'Tag number must be 64 characters or less' });
         }
@@ -375,7 +441,7 @@ export const updateAnimal = async (req: Request, res: Response) => {
       if (req.body.breed === null) {
         data.breed = null;
       } else {
-        const breed = req.body.breed?.toString().trim();
+        const breed = limitedText(req.body.breed, 120);
         if (breed.length > 120) {
           return res.status(400).json({ success: false, error: 'Breed must be 120 characters or less' });
         }
@@ -437,9 +503,16 @@ export const uploadAnimalPhoto = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Photo file is required' });
     }
 
-    const extension = file.originalname.includes('.')
-      ? file.originalname.substring(file.originalname.lastIndexOf('.'))
-      : '.jpg';
+    const extensionByMime: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+    };
+    const extension = extensionByMime[file.mimetype];
+    if (!extension) {
+      return res.status(400).json({ success: false, error: 'Unsupported photo type' });
+    }
+
     const objectKey = `animals/photos/${Date.now()}_${randomUUID()}${extension}`;
 
     // Prefer S3 in configured environments; fallback to local uploads for local development.
@@ -490,6 +563,6 @@ export const uploadAnimalPhoto = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ success: false, error: 'Failed to upload animal photo', details: error });
+    return res.status(500).json(productionError(error, 'Failed to upload animal photo'));
   }
 };

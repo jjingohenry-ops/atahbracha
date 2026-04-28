@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authController } from './authController';
-import { authenticateToken } from '../../middlewares/auth';
+import { authenticateToken, requireRole } from '../../middlewares/auth';
 import { authenticateFirebaseToken } from '../../config/firebaseAdmin';
 
 const router = Router();
@@ -22,8 +22,8 @@ router.post('/logout', authenticateToken, authController.logout);
 router.get('/firebase/me', authenticateFirebaseToken, authController.getCurrentUserFirebase);
 router.put('/firebase/profile', authenticateFirebaseToken, authController.updateProfileFirebase);
 
-// User management (admin routes - could add role checking)
-router.put('/user/:userId/role', authenticateToken, authController.setUserRole);
+// User management
+router.put('/user/:userId/role', authenticateToken, requireRole(['ADMIN']), authController.setUserRole);
 
 // Offline support routes
 router.get('/offline', authController.getOfflineUser);

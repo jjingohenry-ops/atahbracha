@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient, GestationStatus } from '@prisma/client';
 import { resolveDatabaseUserId } from '../../utils/resolveDatabaseUserId';
+import { boundedNumber, limitedText, optionalLimitedText } from '../../utils/input';
 
 const prisma = new PrismaClient();
 
@@ -61,9 +62,9 @@ export const recordTreatment = async (req: Request, res: Response) => {
 
     const farmId = req.body?.farmId?.toString();
     const animalId = req.body?.animalId?.toString();
-    const drugName = req.body?.drugName?.toString().trim();
-    const dosage = req.body?.dosage?.toString().trim();
-    const notes = req.body?.notes?.toString().trim();
+    const drugName = limitedText(req.body?.drugName, 120);
+    const dosage = limitedText(req.body?.dosage, 120);
+    const notes = optionalLimitedText(req.body?.notes, 1000);
     const date = parseOptionalDate(req.body?.date) ?? new Date();
 
     if (!farmId || !animalId || !drugName || !dosage) {
@@ -117,9 +118,9 @@ export const logFeeding = async (req: Request, res: Response) => {
 
     const farmId = req.body?.farmId?.toString();
     const animalId = req.body?.animalId?.toString();
-    const foodType = req.body?.foodType?.toString().trim();
-    const notes = req.body?.notes?.toString().trim();
-    const quantity = Number(req.body?.quantity);
+    const foodType = limitedText(req.body?.foodType, 120);
+    const notes = optionalLimitedText(req.body?.notes, 1000);
+    const quantity = boundedNumber(req.body?.quantity, Number.NaN, 0, 1000000);
     const time = parseOptionalDate(req.body?.time) ?? new Date();
 
     if (!farmId || !animalId || !foodType || !Number.isFinite(quantity) || quantity <= 0) {
@@ -173,7 +174,7 @@ export const recordPregnancy = async (req: Request, res: Response) => {
 
     const farmId = req.body?.farmId?.toString();
     const animalId = req.body?.animalId?.toString();
-    const notes = req.body?.notes?.toString().trim();
+    const notes = optionalLimitedText(req.body?.notes, 1000);
     const startDate = parseOptionalDate(req.body?.startDate) ?? new Date();
     const expectedDate = parseOptionalDate(req.body?.expectedDate);
 
@@ -232,8 +233,8 @@ export const addActivity = async (req: Request, res: Response) => {
 
     const farmId = req.body?.farmId?.toString();
     const animalId = req.body?.animalId?.toString();
-    const activity = req.body?.activity?.toString().trim();
-    const notes = req.body?.notes?.toString().trim();
+    const activity = limitedText(req.body?.activity, 160);
+    const notes = optionalLimitedText(req.body?.notes, 1000);
     const time = parseOptionalDate(req.body?.time) ?? new Date();
 
     if (!farmId || !animalId || !activity) {

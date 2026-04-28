@@ -26,9 +26,14 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-      Provider.of<AnimalsProvider>(context, listen: false)
-          .fetchAnimals(farmId: settingsProvider.activeFarmId);
+      final settingsProvider = Provider.of<SettingsProvider>(
+        context,
+        listen: false,
+      );
+      Provider.of<AnimalsProvider>(
+        context,
+        listen: false,
+      ).fetchAnimals(farmId: settingsProvider.activeFarmId);
     });
   }
 
@@ -51,7 +56,9 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                 theme.brightness == Brightness.dark
                     ? Colors.black.withOpacity(0.45)
                     : Colors.white.withOpacity(0.12),
-                theme.brightness == Brightness.dark ? BlendMode.darken : BlendMode.lighten,
+                theme.brightness == Brightness.dark
+                    ? BlendMode.darken
+                    : BlendMode.lighten,
               ),
             ),
           ),
@@ -75,10 +82,14 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+        onChanged: (value) =>
+            setState(() => _searchQuery = value.trim().toLowerCase()),
         style: TextStyle(color: colorScheme.onSurface),
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.7)),
+          prefixIcon: Icon(
+            Icons.search,
+            color: colorScheme.onSurface.withOpacity(0.7),
+          ),
           hintText: 'Search animal type...',
           hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.65)),
           border: OutlineInputBorder(
@@ -86,7 +97,9 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.85 : 1),
+          fillColor: colorScheme.surface.withOpacity(
+            theme.brightness == Brightness.dark ? 0.85 : 1,
+          ),
         ),
       ),
     );
@@ -103,7 +116,10 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
           return _buildErrorState(provider.error!);
         }
 
-        final allAnimals = provider.animals.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        final allAnimals = provider.animals
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
         final Map<String, int> countsByType = <String, int>{};
 
         for (final animal in allAnimals) {
@@ -128,7 +144,10 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
           return Center(
             child: Text(
               'No animal types found',
-              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: colorScheme.onSurface.withOpacity(0.72),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           );
         }
@@ -152,20 +171,34 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
-                  color: colorScheme.surface.withOpacity(theme.brightness == Brightness.dark ? 0.88 : 1),
+                  color: colorScheme.surface.withOpacity(
+                    theme.brightness == Brightness.dark ? 0.88 : 1,
+                  ),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Text(_animalEmoji(type), style: const TextStyle(fontSize: 26)),
+                    Text(
+                      _animalEmoji(type),
+                      style: const TextStyle(fontSize: 26),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _formatType(type),
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
                     ),
                     Column(
@@ -173,11 +206,18 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
                       children: [
                         Text(
                           '$count',
-                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                         Text(
                           count == 1 ? 'Animal' : 'Animals',
-                          style: TextStyle(fontSize: 13, color: colorScheme.onSurface.withOpacity(0.7)),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
                         ),
                       ],
                     ),
@@ -209,7 +249,11 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
               const SizedBox(height: 12),
               Text(
                 'Unable to Load Animals',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red[700],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
@@ -220,13 +264,21 @@ class _AnimalsScreenState extends State<AnimalsScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () {
-                  final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-                  Provider.of<AnimalsProvider>(context, listen: false)
-                      .fetchAnimals(farmId: settingsProvider.activeFarmId);
+                  final settingsProvider = Provider.of<SettingsProvider>(
+                    context,
+                    listen: false,
+                  );
+                  Provider.of<AnimalsProvider>(
+                    context,
+                    listen: false,
+                  ).fetchAnimals(farmId: settingsProvider.activeFarmId);
                 },
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
               ),
             ],
           ),
@@ -242,7 +294,8 @@ class AnimalTypeAnimalsScreen extends StatefulWidget {
   const AnimalTypeAnimalsScreen({super.key, required this.type});
 
   @override
-  State<AnimalTypeAnimalsScreen> createState() => _AnimalTypeAnimalsScreenState();
+  State<AnimalTypeAnimalsScreen> createState() =>
+      _AnimalTypeAnimalsScreenState();
 }
 
 class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
@@ -264,16 +317,22 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
             child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value.trim().toLowerCase()),
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value.trim().toLowerCase()),
               decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search, color: colorScheme.onSurface.withOpacity(0.7)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: colorScheme.onSurface.withOpacity(0.7),
+                ),
                 hintText: 'Search by name or tag...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withOpacity(theme.brightness == Brightness.dark ? 0.6 : 1),
+                fillColor: colorScheme.surfaceContainerHighest.withOpacity(
+                  theme.brightness == Brightness.dark ? 0.6 : 1,
+                ),
               ),
             ),
           ),
@@ -283,12 +342,23 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                 final animals = provider.animals
                     .whereType<Map>()
                     .map((e) => Map<String, dynamic>.from(e))
-                    .where((animal) => _normalizeType(animal['type']?.toString() ?? 'OTHER') == _normalizeType(widget.type))
+                    .where(
+                      (animal) =>
+                          _normalizeType(
+                            animal['type']?.toString() ?? 'OTHER',
+                          ) ==
+                          _normalizeType(widget.type),
+                    )
                     .where((animal) {
                       if (_searchQuery.isEmpty) return true;
-                      final name = (animal['name'] ?? '').toString().toLowerCase();
-                      final tag = (animal['tagNumber'] ?? animal['id'] ?? '').toString().toLowerCase();
-                      return name.contains(_searchQuery) || tag.contains(_searchQuery);
+                      final name = (animal['name'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final tag = (animal['tagNumber'] ?? animal['id'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      return name.contains(_searchQuery) ||
+                          tag.contains(_searchQuery);
                     })
                     .toList();
 
@@ -296,7 +366,10 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                   return Center(
                     child: Text(
                       'No ${_formatType(widget.type).toLowerCase()} animals found',
-                      style: TextStyle(color: colorScheme.onSurface.withOpacity(0.72), fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withOpacity(0.72),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   );
                 }
@@ -315,7 +388,10 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => AnimalProfileScreen(animalId: animal['id']?.toString() ?? '', initialAnimal: animal),
+                            builder: (_) => AnimalProfileScreen(
+                              animalId: animal['id']?.toString() ?? '',
+                              initialAnimal: animal,
+                            ),
                           ),
                         );
                       },
@@ -324,7 +400,9 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                         decoration: BoxDecoration(
                           color: colorScheme.surface,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+                          border: Border.all(
+                            color: colorScheme.outline.withOpacity(0.2),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -332,11 +410,16 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                               width: 58,
                               height: 58,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF13EC5B).withOpacity(0.14),
+                                color: const Color(
+                                  0xFF13EC5B,
+                                ).withOpacity(0.14),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               alignment: Alignment.center,
-                              child: Text(_animalEmoji(widget.type), style: const TextStyle(fontSize: 28)),
+                              child: Text(
+                                _animalEmoji(widget.type),
+                                style: const TextStyle(fontSize: 28),
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -345,25 +428,41 @@ class _AnimalTypeAnimalsScreenState extends State<AnimalTypeAnimalsScreen> {
                                 children: [
                                   Text(
                                     (animal['name'] ?? 'Unnamed').toString(),
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: colorScheme.onSurface),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                      color: colorScheme.onSurface,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     'Tag: ${(animal['tagNumber'] ?? animal['id'] ?? 'N/A').toString()}',
-                                    style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface.withOpacity(
+                                        0.7,
+                                      ),
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withOpacity(0.14),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 status,
-                                style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 11),
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
                           ],
@@ -405,28 +504,25 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   List<Map<String, String>> _pedigreeRecords = <Map<String, String>>[];
   List<Map<String, String>> _medicalHistoryRecords = <Map<String, String>>[];
 
-  final Map<String, bool> _dailyChecklist = <String, bool>{
-    'Morning feeding': false,
-    'Clean water': true,
-    'Health observation': false,
-    'Evening feeding': false,
-  };
-
   List<String> _galleryUrls = <String>[];
   List<InsuranceProviderEntry> _insuranceProviders = <InsuranceProviderEntry>[];
   Set<String> _savedProviderIds = <String>{};
   List<PrescriptionEntry> _prescriptions = <PrescriptionEntry>[];
+  final Set<String> _markingDoseItemIds = <String>{};
   bool _prescriptionsLoading = false;
   String? _prescriptionsError;
   bool _insuranceLoading = false;
   String? _insuranceError;
   bool _saving = false;
+  String _trendWindow = 'All';
 
   @override
   void initState() {
     super.initState();
     _animal = Map<String, dynamic>.from(widget.initialAnimal);
-    _notesController = TextEditingController(text: (_animal['notes'] ?? '').toString());
+    _notesController = TextEditingController(
+      text: (_animal['notes'] ?? '').toString(),
+    );
     _pedigreeRecords = parseAnimalRecordRows(
       raw: _animal['pedigreeRecords'],
       columns: pedigreeRecordColumns,
@@ -466,7 +562,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
       ),
       body: Consumer<AnimalsProvider>(
         builder: (context, provider, _) {
-          final fromProvider = _findAnimalById(provider.animals, widget.animalId);
+          final fromProvider = _findAnimalById(
+            provider.animals,
+            widget.animalId,
+          );
           if (fromProvider != null) {
             _animal = fromProvider;
           }
@@ -481,7 +580,12 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHeaderCard(type: type, status: status, statusColor: statusColor, heroPhoto: heroPhoto),
+                _buildHeaderCard(
+                  type: type,
+                  status: status,
+                  statusColor: statusColor,
+                  heroPhoto: heroPhoto,
+                ),
                 const SizedBox(height: 12),
                 _buildQuickStats(),
                 const SizedBox(height: 12),
@@ -490,8 +594,6 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                 _buildInsuranceSection(),
                 const SizedBox(height: 12),
                 _buildGestationSection(),
-                const SizedBox(height: 12),
-                _buildFeedingSection(),
                 const SizedBox(height: 12),
                 _buildPrescriptionSection(),
                 const SizedBox(height: 12),
@@ -569,14 +671,21 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(22),
                   ),
                   child: Text(
                     status,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: statusColor),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ],
@@ -600,17 +709,21 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final stats = <Map<String, dynamic>>[
       {
         'label': 'Weight',
-        'value': _animal['weight'] != null ? '${_animal['weight']} kg' : 'Not set',
+        'value': _animal['weight'] != null
+            ? '${_animal['weight']} kg'
+            : 'Not set',
         'icon': Icons.monitor_weight_outlined,
       },
       {
         'label': 'Age',
-        'value': _animal['age'] != null ? '${_animal['age']} yrs' : 'Not set',
+        'value': _animal['age'] != null
+            ? '${_animal['age']} months'
+            : 'Not set',
         'icon': Icons.cake_outlined,
       },
       {
         'label': 'Breed',
-        'value': (_animal['breed'] ?? 'Unknown').toString(),
+        'value': _displayValue(_animal['breed'], fallback: 'Unknown'),
         'icon': Icons.account_tree_outlined,
       },
       {
@@ -639,11 +752,18 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(stat['icon'] as IconData, size: 18, color: const Color(0xFF234B8D)),
+                Icon(
+                  stat['icon'] as IconData,
+                  size: 18,
+                  color: const Color(0xFF234B8D),
+                ),
                 const SizedBox(height: 10),
                 Text(
                   stat['label'] as String,
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -674,23 +794,41 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
       icon: Icons.favorite_outline,
       child: Column(
         children: [
-          _metricTile(Icons.vaccines_outlined, 'Vaccinations', '$vaccines records'),
+          _metricTile(
+            Icons.vaccines_outlined,
+            'Vaccinations',
+            '$vaccines records',
+          ),
           const SizedBox(height: 8),
-          _metricTile(Icons.healing_outlined, 'Treatments', '$treatments records'),
+          _metricTile(
+            Icons.healing_outlined,
+            'Treatments',
+            '$treatments records',
+          ),
           const SizedBox(height: 8),
-          _metricTile(Icons.warning_amber_outlined, 'Alerts', '$alerts active alerts'),
+          _metricTile(
+            Icons.warning_amber_outlined,
+            'Alerts',
+            '$alerts active alerts',
+          ),
         ],
       ),
     );
   }
 
   Widget _buildGestationSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final latestGestation = _latestGestation(_animal);
     final progress = _gestationProgress(_animal);
-    final dueDate = _humanDate(_animal['expectedDeliveryDate']);
-    final serviceDate = _humanDate(_animal['serviceDate']);
+    final dueDate = _humanDate(
+      _animal['expectedDeliveryDate'] ?? latestGestation?['expectedDate'],
+    );
+    final serviceDate = _humanDate(
+      _animal['serviceDate'] ?? latestGestation?['startDate'],
+    );
 
     return _sectionCard(
-      title: 'Breeding & Gestation',
+      title: 'Pregnancy Data',
       icon: Icons.timeline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,8 +836,20 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Progress', style: TextStyle(fontWeight: FontWeight.w600)),
-              Text('${(progress * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+                'Progress',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              Text(
+                '${(progress * 100).round()}%',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -707,7 +857,7 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             minHeight: 10,
             value: progress,
             borderRadius: BorderRadius.circular(20),
-            backgroundColor: const Color(0xFFEDEDED),
+            backgroundColor: colorScheme.outline.withOpacity(0.18),
             valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF13EC5B)),
           ),
           const SizedBox(height: 10),
@@ -724,6 +874,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _buildInsuranceSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final insetSurface = colorScheme.surfaceContainerHighest.withOpacity(0.38);
+    final insetBorder = colorScheme.outline.withOpacity(0.2);
+    final secondaryText = colorScheme.onSurface.withOpacity(0.72);
+
     return _sectionCard(
       title: 'Insurance',
       icon: Icons.shield_outlined,
@@ -740,12 +895,14 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFA),
+                color: insetSurface,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: insetBorder),
               ),
               child: Text(
-                _insuranceError ?? 'No providers available for this animal type and region yet.',
-                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                _insuranceError ??
+                    'No providers available for this animal type and region yet.',
+                style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             )
           else
@@ -757,9 +914,9 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFA),
+                    color: insetSurface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE7E7E7)),
+                    border: Border.all(color: insetBorder),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,17 +926,25 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                           Expanded(
                             child: Text(
                               provider.name,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: colorScheme.onSurface,
+                              ),
                             ),
                           ),
                           if (saved)
-                            const Icon(Icons.bookmark, size: 16, color: Color(0xFF2B5FB8)),
+                            const Icon(
+                              Icons.bookmark,
+                              size: 16,
+                              color: Color(0xFF2B5FB8),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
                         provider.coverageSummary,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        style: TextStyle(fontSize: 12, color: secondaryText),
                       ),
                       const SizedBox(height: 6),
                       Wrap(
@@ -788,15 +953,24 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                         children: provider.supportedAnimalTypes
                             .map(
                               (type) => Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: colorScheme.surface,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFFE0E0E0)),
+                                  border: Border.all(
+                                    color: insetBorder,
+                                  ),
                                 ),
                                 child: Text(
                                   _formatType(type),
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                             )
@@ -806,14 +980,21 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                       Row(
                         children: [
                           FilledButton.tonalIcon(
-                            onPressed: () => _showInsuranceContactOptions(provider),
-                            icon: const Icon(Icons.contact_phone_outlined, size: 16),
+                            onPressed: () =>
+                                _showInsuranceContactOptions(provider),
+                            icon: const Icon(
+                              Icons.contact_phone_outlined,
+                              size: 16,
+                            ),
                             label: const Text('Contact'),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton.icon(
                             onPressed: () => _toggleProviderSaved(provider.id),
-                            icon: Icon(saved ? Icons.bookmark : Icons.bookmark_border, size: 16),
+                            icon: Icon(
+                              saved ? Icons.bookmark : Icons.bookmark_border,
+                              size: 16,
+                            ),
                             label: Text(saved ? 'Saved' : 'Save for later'),
                           ),
                         ],
@@ -828,30 +1009,12 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     );
   }
 
-  Widget _buildFeedingSection() {
-    return _sectionCard(
-      title: 'Feeding & Daily Care',
-      icon: Icons.restaurant_outlined,
-      child: Column(
-        children: _dailyChecklist.entries.map((entry) {
-          return CheckboxListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            value: entry.value,
-            title: Text(entry.key, style: const TextStyle(fontSize: 14)),
-            activeColor: const Color(0xFF13EC5B),
-            onChanged: (checked) {
-              setState(() {
-                _dailyChecklist[entry.key] = checked ?? false;
-              });
-            },
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildPrescriptionSection() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final insetSurface = colorScheme.surfaceContainerHighest.withOpacity(0.38);
+    final insetBorder = colorScheme.outline.withOpacity(0.2);
+    final secondaryText = colorScheme.onSurface.withOpacity(0.72);
+
     return _sectionCard(
       title: 'Prescriptions & Treatment Tracker',
       icon: Icons.medical_services_outlined,
@@ -884,12 +1047,14 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFA),
+                color: insetSurface,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: insetBorder),
               ),
               child: Text(
-                _prescriptionsError ?? 'No prescriptions yet. Tap New to add one.',
-                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                _prescriptionsError ??
+                    'No prescriptions yet. Tap New to add one.',
+                style: TextStyle(fontSize: 13, color: secondaryText),
               ),
             )
           else
@@ -905,9 +1070,9 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFA),
+                      color: insetSurface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE7E7E7)),
+                      border: Border.all(color: insetBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -917,18 +1082,29 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                             Expanded(
                               child: Text(
                                 prescription.diagnosis,
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.onSurface,
+                                ),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withOpacity(0.16),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 '${(progress * 100).round()}%',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: statusColor,
+                                ),
                               ),
                             ),
                           ],
@@ -938,42 +1114,63 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                           (prescription.vetName ?? '').isEmpty
                               ? 'Vet: Not recorded'
                               : 'Vet: ${prescription.vetName}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: secondaryText,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         LinearProgressIndicator(
                           value: progress,
                           minHeight: 8,
                           borderRadius: BorderRadius.circular(20),
-                          backgroundColor: const Color(0xFFECECEC),
-                          valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                          backgroundColor: colorScheme.outline.withOpacity(0.18),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            statusColor,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         ...prescription.items.take(2).map((item) {
                           final canMark = item.remainingDoses > 0;
-                          final itemStatusColor = _doseStatusColor(item.statusColor);
+                          final isMarking = _markingDoseItemIds.contains(item.id);
+                          final itemStatusColor = _doseStatusColor(
+                            item.statusColor,
+                          );
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFEAEAEA)),
+                              border: Border.all(
+                                color: insetBorder,
+                              ),
                             ),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         item.drugName,
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.onSurface,
+                                        ),
                                       ),
                                       Text(
                                         '${item.dosage} • ${item.completedDoses}/${item.totalDoses} doses',
-                                        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: secondaryText,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -988,13 +1185,21 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                                   ),
                                 ),
                                 FilledButton.tonal(
-                                  onPressed: canMark
+                                  onPressed: canMark && !isMarking
                                       ? () => _markDoseAsGiven(
-                                            prescriptionId: prescription.id,
-                                            itemId: item.id,
-                                          )
+                                          prescriptionId: prescription.id,
+                                          itemId: item.id,
+                                        )
                                       : null,
-                                  child: Text(canMark ? 'Mark given' : 'Done'),
+                                  child: isMarking
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : Text(canMark ? 'Mark given' : 'Done'),
                                 ),
                               ],
                             ),
@@ -1003,7 +1208,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                         if (prescription.items.length > 2)
                           Text(
                             '+${prescription.items.length - 2} more drug(s)',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: secondaryText,
+                            ),
                           ),
                       ],
                     ),
@@ -1041,26 +1249,42 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     }
   }
 
-  Future<void> _markDoseAsGiven({required String prescriptionId, required String itemId}) async {
-    final success = await _prescriptionService.markDoseGiven(
-      animalId: widget.animalId,
-      prescriptionId: prescriptionId,
-      itemId: itemId,
-    );
+  Future<void> _markDoseAsGiven({
+    required String prescriptionId,
+    required String itemId,
+  }) async {
+    if (_markingDoseItemIds.contains(itemId)) return;
 
-    if (!mounted) return;
+    setState(() {
+      _markingDoseItemIds.add(itemId);
+    });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Dose logged. It will sync automatically if offline.'
-              : 'Could not log dose right now.',
+    try {
+      final success = await _prescriptionService.markDoseGiven(
+        animalId: widget.animalId,
+        prescriptionId: prescriptionId,
+        itemId: itemId,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Dose logged. It will sync automatically if offline.'
+                : 'Could not log dose right now.',
+          ),
         ),
-      ),
-    );
+      );
 
-    await _loadPrescriptions();
+      await _loadPrescriptions();
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _markingDoseItemIds.remove(itemId);
+      });
+    }
   }
 
   void _openPrescriptionDetails(PrescriptionEntry prescription) {
@@ -1071,6 +1295,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final insetSurface = colorScheme.surfaceContainerHighest.withOpacity(0.38);
+        final insetBorder = colorScheme.outline.withOpacity(0.2);
+        final secondaryText = colorScheme.onSurface.withOpacity(0.72);
+
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 22),
@@ -1080,20 +1309,25 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                 children: [
                   Text(
                     prescription.diagnosis,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     (prescription.vetName ?? '').isEmpty
                         ? 'Vet: Not specified'
                         : 'Vet: ${prescription.vetName}',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                    style: TextStyle(fontSize: 13, color: secondaryText),
                   ),
-                  if (prescription.notes != null && prescription.notes!.isNotEmpty) ...[
+                  if (prescription.notes != null &&
+                      prescription.notes!.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
                       prescription.notes!,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                      style: TextStyle(fontSize: 13, color: colorScheme.onSurface),
                     ),
                   ],
                   const SizedBox(height: 12),
@@ -1101,19 +1335,22 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                     value: prescription.progress.clamp(0.0, 1.0),
                     minHeight: 9,
                     borderRadius: BorderRadius.circular(20),
-                    backgroundColor: const Color(0xFFECECEC),
-                    valueColor: AlwaysStoppedAnimation<Color>(_prescriptionStatusColor(prescription)),
+                    backgroundColor: colorScheme.outline.withOpacity(0.18),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _prescriptionStatusColor(prescription),
+                    ),
                   ),
                   const SizedBox(height: 14),
                   ...prescription.items.map((item) {
                     final canMark = item.remainingDoses > 0;
+                    final isMarking = _markingDoseItemIds.contains(item.id);
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFA),
+                        color: insetSurface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE5E5E5)),
+                        border: Border.all(color: insetBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1123,13 +1360,22 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                               Expanded(
                                 child: Text(
                                   item.drugName,
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: _doseStatusColor(item.statusColor).withOpacity(0.16),
+                                  color: _doseStatusColor(
+                                    item.statusColor,
+                                  ).withOpacity(0.16),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
@@ -1146,20 +1392,29 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                           const SizedBox(height: 6),
                           Text(
                             '${item.dosage} • ${item.frequencyPerDay}x/day • ${item.durationDays} day(s)',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: secondaryText,
+                            ),
                           ),
                           Text(
                             'Progress: ${item.completedDoses}/${item.totalDoses} doses',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: secondaryText,
+                            ),
                           ),
                           if (item.withdrawalPeriodDays != null)
                             Text(
                               'Withdrawal: ${item.withdrawalPeriodDays} day(s)',
-                              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: secondaryText,
+                              ),
                             ),
                           const SizedBox(height: 8),
                           FilledButton.tonalIcon(
-                            onPressed: canMark
+                            onPressed: canMark && !isMarking
                                 ? () {
                                     Navigator.pop(context);
                                     _markDoseAsGiven(
@@ -1168,8 +1423,22 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                                     );
                                   }
                                 : null,
-                            icon: const Icon(Icons.check, size: 16),
-                            label: Text(canMark ? 'Mark as given' : 'Completed'),
+                            icon: isMarking
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check, size: 16),
+                            label: Text(
+                              isMarking
+                                  ? 'Saving'
+                                  : canMark
+                                      ? 'Mark as given'
+                                      : 'Completed',
+                            ),
                           ),
                         ],
                       ),
@@ -1188,23 +1457,94 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final diagnosisController = TextEditingController();
     final vetController = TextEditingController();
     final notesController = TextEditingController();
+    final theme = Theme.of(context);
+    final catalog = await _prescriptionService.fetchDrugCatalog();
+    if (!mounted) {
+      diagnosisController.dispose();
+      vetController.dispose();
+      notesController.dispose();
+      return;
+    }
 
-    final List<Map<String, dynamic>> draftItems = <Map<String, dynamic>>[
-      {
+    final commonDrugDefaults = <String, Map<String, dynamic>>{
+      'Oxytetracycline': {
         'drugName': 'Oxytetracycline',
         'dosage': '10 ml',
         'frequencyPerDay': 1,
         'durationDays': 3,
         'withdrawalPeriodDays': 7,
       },
+      'Penicillin': {
+        'drugName': 'Penicillin',
+        'dosage': '5 ml',
+        'frequencyPerDay': 1,
+        'durationDays': 5,
+        'withdrawalPeriodDays': 7,
+      },
+      'Albendazole': {
+        'drugName': 'Albendazole',
+        'dosage': '7.5 mg/kg',
+        'frequencyPerDay': 1,
+        'durationDays': 1,
+        'withdrawalPeriodDays': 14,
+      },
+      'Ivermectin': {
+        'drugName': 'Ivermectin',
+        'dosage': '0.2 mg/kg',
+        'frequencyPerDay': 1,
+        'durationDays': 1,
+        'withdrawalPeriodDays': 21,
+      },
+      'Vitamin B Complex': {
+        'drugName': 'Vitamin B Complex',
+        'dosage': '5 ml',
+        'frequencyPerDay': 1,
+        'durationDays': 3,
+        'withdrawalPeriodDays': 0,
+      },
+    };
+
+    for (final drug in catalog) {
+      commonDrugDefaults[drug.name] = {
+        'drugName': drug.name,
+        'dosage': drug.defaultDosage,
+        'frequencyPerDay': drug.defaultFrequencyPerDay,
+        'durationDays': drug.defaultDurationDays,
+        'withdrawalPeriodDays': drug.defaultWithdrawalPeriodDays ?? 0,
+        'notes': drug.notes,
+      };
+    }
+
+    final historyDefaults = <String, Map<String, dynamic>>{};
+    for (final prescription in _prescriptions) {
+      for (final item in prescription.items) {
+        historyDefaults[item.drugName] = {
+          'drugName': item.drugName,
+          'dosage': item.dosage,
+          'frequencyPerDay': item.frequencyPerDay,
+          'durationDays': item.durationDays,
+          'withdrawalPeriodDays': item.withdrawalPeriodDays ?? 0,
+        };
+      }
+    }
+
+    Map<String, dynamic> templateFor(String drugName) {
+      return Map<String, dynamic>.from(
+        historyDefaults[drugName] ??
+            commonDrugDefaults[drugName] ??
+            commonDrugDefaults['Oxytetracycline']!,
+      );
+    }
+
+    final List<Map<String, dynamic>> draftItems = <Map<String, dynamic>>[
+      templateFor('Oxytetracycline'),
     ];
 
-    const commonDrugs = <String>[
-      'Oxytetracycline',
-      'Penicillin',
-      'Albendazole',
-      'Ivermectin',
-      'Vitamin B Complex',
+    final commonDrugs = <String>[
+      ...historyDefaults.keys,
+      ...commonDrugDefaults.keys.where(
+        (drug) => !historyDefaults.containsKey(drug),
+      ),
       'Other',
     ];
 
@@ -1215,117 +1555,212 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
           builder: (context, setLocalState) {
             return AlertDialog(
               title: const Text('New Prescription'),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 24,
+              ),
               content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: diagnosisController,
-                      decoration: const InputDecoration(labelText: 'Diagnosis'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: vetController,
-                      decoration: const InputDecoration(labelText: 'Vet name (optional)'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: notesController,
-                      minLines: 2,
-                      maxLines: 3,
-                      decoration: const InputDecoration(labelText: 'Notes (optional)'),
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Drugs',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.grey[800]),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...List.generate(draftItems.length, (index) {
-                      final item = draftItems[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F9FA),
-                          borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 520,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: diagnosisController,
+                        decoration: const InputDecoration(
+                          labelText: 'Diagnosis',
+                          hintText: 'e.g. Respiratory infection',
+                          prefixIcon: Icon(Icons.medical_information_outlined),
                         ),
-                        child: Column(
-                          children: [
-                            DropdownButtonFormField<String>(
-                              value: commonDrugs.contains(item['drugName']) ? item['drugName'] as String : 'Other',
-                              items: commonDrugs
-                                  .map((drug) => DropdownMenuItem(value: drug, child: Text(drug)))
-                                  .toList(),
-                              onChanged: (value) {
-                                if (value == null) return;
-                                setLocalState(() {
-                                  item['drugName'] = value == 'Other' ? '' : value;
-                                });
-                              },
-                              decoration: const InputDecoration(labelText: 'Drug'),
-                            ),
-                            if ((item['drugName'] ?? '').toString().isEmpty)
-                              TextField(
-                                onChanged: (value) => item['drugName'] = value,
-                                decoration: const InputDecoration(labelText: 'Custom drug name'),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: vetController,
+                        decoration: const InputDecoration(
+                          labelText: 'Vet name',
+                          hintText: 'Optional',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: notesController,
+                        minLines: 2,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Instructions',
+                          hintText:
+                              'Food, timing, isolation, or observation notes',
+                          prefixIcon: Icon(Icons.notes_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Drugs',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...List.generate(draftItems.length, (index) {
+                        final item = draftItems[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              DropdownButtonFormField<String>(
+                                value: commonDrugs.contains(item['drugName'])
+                                    ? item['drugName'] as String
+                                    : 'Other',
+                                items: commonDrugs
+                                    .map(
+                                      (drug) => DropdownMenuItem(
+                                        value: drug,
+                                        child: Text(drug),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setLocalState(() {
+                                    if (value == 'Other') {
+                                      item
+                                        ..['drugName'] = ''
+                                        ..['dosage'] = ''
+                                        ..['frequencyPerDay'] = 1
+                                        ..['durationDays'] = 1
+                                        ..['withdrawalPeriodDays'] = 0;
+                                    } else {
+                                      item
+                                        ..clear()
+                                        ..addAll(templateFor(value));
+                                    }
+                                  });
+                                },
+                                decoration: const InputDecoration(
+                                  labelText: 'Drug',
+                                ),
                               ),
-                            TextField(
-                              controller: TextEditingController(text: (item['dosage'] ?? '').toString()),
-                              onChanged: (value) => item['dosage'] = value,
-                              decoration: const InputDecoration(labelText: 'Dosage'),
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: TextEditingController(
-                                      text: (item['frequencyPerDay'] ?? 1).toString(),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) => item['frequencyPerDay'] = int.tryParse(value) ?? 1,
-                                    decoration: const InputDecoration(labelText: 'Freq/day'),
+                              if ((item['drugName'] ?? '').toString().isEmpty)
+                                TextFormField(
+                                  initialValue: '',
+                                  onChanged: (value) =>
+                                      item['drugName'] = value,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Custom drug name',
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: TextEditingController(
-                                      text: (item['durationDays'] ?? 1).toString(),
+                              TextFormField(
+                                key: ValueKey(
+                                  'dosage-$index-${item['drugName']}-${item['dosage']}',
+                                ),
+                                initialValue: (item['dosage'] ?? '').toString(),
+                                onChanged: (value) => item['dosage'] = value,
+                                decoration: const InputDecoration(
+                                  labelText: 'Dosage',
+                                  hintText: 'e.g. 10 ml or 7.5 mg/kg',
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      key: ValueKey(
+                                        'frequency-$index-${item['frequencyPerDay']}',
+                                      ),
+                                      initialValue:
+                                          (item['frequencyPerDay'] ?? 1)
+                                              .toString(),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) =>
+                                          item['frequencyPerDay'] =
+                                              int.tryParse(value) ?? 1,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Times/day',
+                                      ),
                                     ),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (value) => item['durationDays'] = int.tryParse(value) ?? 1,
-                                    decoration: const InputDecoration(labelText: 'Duration days'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: TextFormField(
+                                      key: ValueKey(
+                                        'duration-$index-${item['durationDays']}',
+                                      ),
+                                      initialValue: (item['durationDays'] ?? 1)
+                                          .toString(),
+                                      keyboardType: TextInputType.number,
+                                      onChanged: (value) =>
+                                          item['durationDays'] =
+                                              int.tryParse(value) ?? 1,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Duration days',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              TextFormField(
+                                key: ValueKey(
+                                  'withdrawal-$index-${item['withdrawalPeriodDays']}',
+                                ),
+                                initialValue:
+                                    (item['withdrawalPeriodDays'] ?? 0)
+                                        .toString(),
+                                keyboardType: TextInputType.number,
+                                onChanged: (value) =>
+                                    item['withdrawalPeriodDays'] =
+                                        int.tryParse(value) ?? 0,
+                                decoration: const InputDecoration(
+                                  labelText: 'Withdrawal days',
+                                ),
+                              ),
+                              if (draftItems.length > 1)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: () => setLocalState(
+                                      () => draftItems.removeAt(index),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 16,
+                                    ),
+                                    label: const Text('Remove'),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          setLocalState(() {
-                            draftItems.add({
-                              'drugName': 'Oxytetracycline',
-                              'dosage': '10 ml',
-                              'frequencyPerDay': 1,
-                              'durationDays': 3,
-                              'withdrawalPeriodDays': 7,
+                            ],
+                          ),
+                        );
+                      }),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            setLocalState(() {
+                              draftItems.add({
+                                ...templateFor('Oxytetracycline'),
+                              });
                             });
-                          });
-                        },
-                        icon: const Icon(Icons.add, size: 16),
-                        label: const Text('Add drug'),
+                          },
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Add drug'),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -1356,14 +1791,16 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final notesValue = notesController.text.trim();
     final items = draftItems
         .where((item) => (item['drugName'] ?? '').toString().trim().isNotEmpty)
-        .map((item) => {
-              'drugName': (item['drugName'] ?? '').toString().trim(),
-              'dosage': (item['dosage'] ?? '').toString().trim(),
-              'frequencyPerDay': item['frequencyPerDay'] ?? 1,
-              'durationDays': item['durationDays'] ?? 1,
-              'withdrawalPeriodDays': item['withdrawalPeriodDays'] ?? 0,
-              'startDate': DateTime.now().toIso8601String(),
-            })
+        .map(
+          (item) => {
+            'drugName': (item['drugName'] ?? '').toString().trim(),
+            'dosage': (item['dosage'] ?? '').toString().trim(),
+            'frequencyPerDay': item['frequencyPerDay'] ?? 1,
+            'durationDays': item['durationDays'] ?? 1,
+            'withdrawalPeriodDays': item['withdrawalPeriodDays'] ?? 0,
+            'startDate': DateTime.now().toIso8601String(),
+          },
+        )
         .where((item) => (item['dosage'] ?? '').toString().isNotEmpty)
         .toList();
 
@@ -1374,7 +1811,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     if (diagnosis.isEmpty || items.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Diagnosis and at least one valid drug item are required.')),
+        const SnackBar(
+          content: Text(
+            'Diagnosis and at least one valid drug item are required.',
+          ),
+        ),
       );
       return;
     }
@@ -1393,8 +1834,8 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
       SnackBar(
         content: Text(
           success
-              ? 'Prescription saved. Offline entries sync automatically.'
-              : 'Unable to save prescription right now.',
+              ? 'Prescription saved and treatment reminders created.'
+              : 'Unable to save prescription online. Please check the fields and try again.',
         ),
       ),
     );
@@ -1405,10 +1846,14 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   Color _prescriptionStatusColor(PrescriptionEntry prescription) {
     if (prescription.items.isEmpty) return const Color(0xFF889096);
 
-    final hasRed = prescription.items.any((item) => item.statusColor.toUpperCase() == 'RED');
+    final hasRed = prescription.items.any(
+      (item) => item.statusColor.toUpperCase() == 'RED',
+    );
     if (hasRed) return const Color(0xFFD64545);
 
-    final hasYellow = prescription.items.any((item) => item.statusColor.toUpperCase() == 'YELLOW');
+    final hasYellow = prescription.items.any(
+      (item) => item.statusColor.toUpperCase() == 'YELLOW',
+    );
     if (hasYellow) return const Color(0xFFE8A317);
 
     return const Color(0xFF2E9A57);
@@ -1423,41 +1868,164 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
 
   Widget _buildTrendSection() {
     final weight = (_animal['weight'] as num?)?.toDouble() ?? 100;
-    final values = <double>[
-      math.max(30, weight * 0.78),
-      math.max(30, weight * 0.84),
-      math.max(30, weight * 0.89),
-      math.max(30, weight * 0.94),
-      math.max(30, weight),
-    ];
+    final ageMonths = (_animal['age'] as num?)?.toInt() ?? 0;
+    final points = _trendPoints(
+      ageMonths: ageMonths,
+      weight: weight,
+      window: _trendWindow,
+    );
+    final values = <double>[for (final point in points) point['weight']!];
 
     final maxV = values.reduce(math.max);
+    final minAge = points.first['age']!.round();
+    final maxAge = points.last['age']!.round();
 
     return _sectionCard(
       title: 'Performance Trends',
       icon: Icons.show_chart,
-      child: SizedBox(
-        height: 120,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: values.map((value) {
-            final height = (value / maxV) * 96;
-            return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Container(
-                  height: height,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2B5FB8),
-                    borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: DropdownButton<String>(
+              value: _trendWindow,
+              items: const [
+                DropdownMenuItem(value: '6M', child: Text('Last 6 months')),
+                DropdownMenuItem(value: '12M', child: Text('Last 12 months')),
+                DropdownMenuItem(value: 'All', child: Text('All age')),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _trendWindow = value);
+              },
+            ),
+          ),
+          SizedBox(
+            height: 160,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  width: 34,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${maxV.round()}kg',
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                      const Text(
+                        'Weight',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Text('0kg', style: TextStyle(fontSize: 10)),
+                    ],
                   ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: Colors.grey.withOpacity(0.55),
+                              ),
+                              bottom: BorderSide(
+                                color: Colors.grey.withOpacity(0.55),
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: points.map((point) {
+                              final value = point['weight']!;
+                              final heightFactor = maxV <= 0
+                                  ? 0.0
+                                  : (value / maxV).clamp(0.05, 1.0);
+                              return Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  child: FractionallySizedBox(
+                                    alignment: Alignment.bottomCenter,
+                                    heightFactor: heightFactor,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2B5FB8),
+                                        borderRadius:
+                                            const BorderRadius.vertical(
+                                              top: Radius.circular(6),
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$minAge mo',
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                          const Text(
+                            'Age (months)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            '$maxAge mo',
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  List<Map<String, double>> _trendPoints({
+    required int ageMonths,
+    required double weight,
+    required String window,
+  }) {
+    final currentAge = math.max(ageMonths, 1);
+    final span = switch (window) {
+      '6M' => math.min(currentAge, 6),
+      '12M' => math.min(currentAge, 12),
+      _ => currentAge,
+    };
+    final pointCount = math.min(6, math.max(2, span + 1));
+    final startAge = math.max(0, currentAge - span);
+
+    return List<Map<String, double>>.generate(pointCount, (index) {
+      final ratio = pointCount == 1 ? 1.0 : index / (pointCount - 1);
+      final age = startAge + (currentAge - startAge) * ratio;
+      final estimatedWeight = weight * (0.65 + (0.35 * ratio));
+      return {'age': age.toDouble(), 'weight': math.max(0, estimatedWeight)};
+    });
   }
 
   Future<void> _openPedigreeRecordsEditor() async {
@@ -1510,7 +2078,9 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     if (rows.length == 1) {
       return first.isEmpty ? '1 row saved' : first;
     }
-    return first.isEmpty ? '${rows.length} rows saved' : '$first (+${rows.length - 1} more)';
+    return first.isEmpty
+        ? '${rows.length} rows saved'
+        : '$first (+${rows.length - 1} more)';
   }
 
   Widget _buildRecordTableLauncher({
@@ -1536,11 +2106,17 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(
+                  label,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   helper,
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 5),
                 Text(
@@ -1548,7 +2124,9 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: hasRows ? const Color(0xFF2E9A57) : colorScheme.onSurface.withOpacity(0.65),
+                    color: hasRows
+                        ? const Color(0xFF2E9A57)
+                        : colorScheme.onSurface.withOpacity(0.65),
                   ),
                 ),
               ],
@@ -1557,7 +2135,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
           const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: onTap,
-            icon: Icon(hasRows ? Icons.edit : Icons.table_chart_outlined, size: 17),
+            icon: Icon(
+              hasRows ? Icons.edit : Icons.table_chart_outlined,
+              size: 17,
+            ),
             label: Text(hasRows ? 'Edit Table' : 'Open Table'),
           ),
         ],
@@ -1576,18 +2157,28 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             minLines: 2,
             maxLines: 4,
             decoration: InputDecoration(
-              labelText: 'Notes',
+              labelText: 'Notes and animal history',
+              hintText:
+                  'Record temperament, pregnancy notes, treatments, sales history, or important observations.',
               suffixIcon: IconButton(
                 icon: const Icon(Icons.mic_none),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Voice input will be enabled in a follow-up step.')),
+                    const SnackBar(
+                      content: Text(
+                        'Voice input will be enabled in a follow-up step.',
+                      ),
+                    ),
                   );
                 },
               ),
             ),
           ),
           const SizedBox(height: 10),
+          if (_prescriptions.isNotEmpty) ...[
+            _buildHistorySummary(),
+            const SizedBox(height: 10),
+          ],
           _buildRecordTableLauncher(
             label: 'Pedigree Table',
             helper: 'Open a popup table for lineage records.',
@@ -1621,7 +2212,47 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     );
   }
 
+  Widget _buildHistorySummary() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Treatment History',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          ..._prescriptions.take(3).map((prescription) {
+            final drugs = prescription.items
+                .map((item) => item.drugName)
+                .join(', ');
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '${_humanDate(prescription.createdAt.toIso8601String())}: ${prescription.diagnosis}'
+                '${drugs.isEmpty ? '' : ' - $drugs'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withOpacity(0.78),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMediaGallery(String? heroPhoto) {
+    final colorScheme = Theme.of(context).colorScheme;
     final urls = <String>{..._galleryUrls};
     if (heroPhoto != null) {
       urls.add(heroPhoto);
@@ -1646,7 +2277,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFBFE9CC)),
                 ),
-                child: const Icon(Icons.add_a_photo_outlined, color: Color(0xFF2A7A47)),
+                child: const Icon(
+                  Icons.add_a_photo_outlined,
+                  color: Color(0xFF2A7A47),
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -1667,9 +2301,12 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
                       errorBuilder: (_, __, ___) => Container(
                         width: 90,
                         height: 90,
-                        color: Colors.grey[200],
+                        color: colorScheme.surfaceContainerHighest,
                         alignment: Alignment.center,
-                        child: const Icon(Icons.broken_image_outlined),
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: colorScheme.onSurface.withOpacity(0.65),
+                        ),
                       ),
                     ),
                   );
@@ -1715,7 +2352,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     );
   }
 
-  Widget _sectionCard({required String title, required IconData icon, required Widget child}) {
+  Widget _sectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1764,10 +2405,16 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ],
             ),
@@ -1778,18 +2425,33 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
   }
 
   Widget _dateChip(String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFA),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.38),
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: colorScheme.onSurface,
+            ),
+          ),
         ],
       ),
     );
@@ -1803,8 +2465,13 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
       return p.clamp(0.0, 1.0);
     }
 
-    final start = _parseDate(animal['serviceDate']);
-    final end = _parseDate(animal['expectedDeliveryDate']);
+    final latestGestation = _latestGestation(animal);
+    final start = _parseDate(
+      animal['serviceDate'] ?? latestGestation?['startDate'],
+    );
+    final end = _parseDate(
+      animal['expectedDeliveryDate'] ?? latestGestation?['expectedDate'],
+    );
     if (start == null || end == null) return 0.35;
 
     final total = end.difference(start).inDays;
@@ -1812,6 +2479,16 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
 
     final elapsed = DateTime.now().difference(start).inDays;
     return (elapsed / total).clamp(0.0, 1.0);
+  }
+
+  Map<String, dynamic>? _latestGestation(Map<String, dynamic> animal) {
+    final gestations = animal['gestations'];
+    if (gestations is List &&
+        gestations.isNotEmpty &&
+        gestations.first is Map) {
+      return Map<String, dynamic>.from(gestations.first as Map);
+    }
+    return null;
   }
 
   DateTime? _parseDate(dynamic value) {
@@ -1830,6 +2507,11 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
     return '$y-$m-$d';
+  }
+
+  String _displayValue(dynamic value, {required String fallback}) {
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? fallback : text;
   }
 
   Map<String, dynamic>? _findAnimalById(List<dynamic> list, String animalId) {
@@ -1851,27 +2533,27 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     final provider = Provider.of<AnimalsProvider>(context, listen: false);
 
-    final success = await provider.updateAnimal(
-      widget.animalId,
-      {
-        'notes': _notesController.text.trim(),
-        'pedigreeRecords': _pedigreeRecords,
-        'medicalHistoryRecords': _medicalHistoryRecords,
-      },
-      farmId: settings.activeFarmId,
-    );
+    final success = await provider.updateAnimal(widget.animalId, {
+      'notes': _notesController.text.trim(),
+      'pedigreeRecords': _pedigreeRecords,
+      'medicalHistoryRecords': _medicalHistoryRecords,
+    }, farmId: settings.activeFarmId);
 
     if (!mounted) return;
 
     setState(() => _saving = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success ? 'Saved' : (provider.error ?? 'Unable to save'))),
+      SnackBar(
+        content: Text(success ? 'Saved' : (provider.error ?? 'Unable to save')),
+      ),
     );
   }
 
   Future<void> _updateWeight() async {
-    final controller = TextEditingController(text: (_animal['weight'] ?? '').toString());
+    final controller = TextEditingController(
+      text: (_animal['weight'] ?? '').toString(),
+    );
 
     final result = await showDialog<double>(
       context: context,
@@ -1884,7 +2566,10 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             decoration: const InputDecoration(labelText: 'Weight (kg)'),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context, double.tryParse(controller.text.trim()));
@@ -1903,16 +2588,20 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     final provider = Provider.of<AnimalsProvider>(context, listen: false);
 
-    final success = await provider.updateAnimal(
-      widget.animalId,
-      {'weight': result},
-      farmId: settings.activeFarmId,
-    );
+    final success = await provider.updateAnimal(widget.animalId, {
+      'weight': result,
+    }, farmId: settings.activeFarmId);
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success ? 'Weight updated' : (provider.error ?? 'Unable to update weight'))),
+      SnackBar(
+        content: Text(
+          success
+              ? 'Weight updated'
+              : (provider.error ?? 'Unable to update weight'),
+        ),
+      ),
     );
   }
 
@@ -1945,18 +2634,16 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
     });
 
     if (widget.animalId.isNotEmpty) {
-      await provider.updateAnimal(
-        widget.animalId,
-        {'photoUrl': uploadedUrl},
-        farmId: settings.activeFarmId,
-      );
+      await provider.updateAnimal(widget.animalId, {
+        'photoUrl': uploadedUrl,
+      }, farmId: settings.activeFarmId);
     }
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Media uploaded')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Media uploaded')));
   }
 
   Future<void> _loadInsuranceProviders() async {
@@ -2036,7 +2723,13 @@ class _AnimalProfileScreenState extends State<AnimalProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(provider.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              Text(
+                provider.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 10),
               if (provider.phone != null)
                 ListTile(
@@ -2163,8 +2856,11 @@ String _statusLabel(String? raw) {
 Color _statusColor(String status) {
   final normalized = status.toLowerCase();
   if (normalized.contains('healthy')) return const Color(0xFF2E9A57);
-  if (normalized.contains('gestat') || normalized.contains('pregnant')) return const Color(0xFF8A52D1);
-  if (normalized.contains('care') || normalized.contains('alert') || normalized.contains('sick')) {
+  if (normalized.contains('gestat') || normalized.contains('pregnant'))
+    return const Color(0xFF8A52D1);
+  if (normalized.contains('care') ||
+      normalized.contains('alert') ||
+      normalized.contains('sick')) {
     return const Color(0xFFD36A25);
   }
   return const Color(0xFF2B5FB8);

@@ -12,6 +12,9 @@ import { animalRoutes } from './src/modules/animal/animalRoutes';
 import { remindersRoutes } from './src/modules/treatment/treatmentRoutes';
 import { aiRoutes } from './src/modules/ai/aiRoutes';
 import { chatRoutes } from './src/modules/chat/chatRoutes';
+import { insuranceRoutes } from './src/modules/insurance/insuranceRoutes';
+import { prescriptionRoutes } from './src/modules/prescription/prescriptionRoutes';
+import { createRateLimiter } from './src/middlewares/rateLimit';
 // import { syncService } from './src/modules/sync/syncService'; // Sync service uses Dexie (browser-only), not compatible with Node.js backend
 
 const app = express();
@@ -62,6 +65,12 @@ app.use(cors({
 // Compression middleware
 app.use(compression());
 
+app.use('/api', createRateLimiter({
+  windowMs: config.API_RATE_LIMIT_WINDOW_MS,
+  max: config.API_RATE_LIMIT_MAX,
+  keyPrefix: 'api',
+}));
+
 app.use('/api', (_req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -108,13 +117,19 @@ app.get('/marketing', (_req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', createRateLimiter({
+  windowMs: config.API_RATE_LIMIT_WINDOW_MS,
+  max: config.AUTH_RATE_LIMIT_MAX,
+  keyPrefix: 'auth',
+}), authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/reminders', remindersRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/insurance', insuranceRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

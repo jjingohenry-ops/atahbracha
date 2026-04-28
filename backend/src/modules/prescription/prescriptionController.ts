@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { resolveDatabaseUserId } from '../../utils/resolveDatabaseUserId';
 
 const prisma = new PrismaClient();
+const MAX_TEXT_LENGTH = 500;
+const MAX_PRESCRIPTION_ITEMS = 10;
+const MAX_FREQUENCY_PER_DAY = 6;
+const MAX_DURATION_DAYS = 90;
+const MAX_WITHDRAWAL_DAYS = 365;
+const MAX_SYNC_OPERATIONS = 50;
 
 type DoseStatus = 'GREEN' | 'YELLOW' | 'RED';
 
@@ -27,6 +34,14 @@ function safeNum(value: unknown, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function boundedNum(value: unknown, fallback: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, safeNum(value, fallback)));
+}
+
+function limitedText(value: unknown, maxLength = MAX_TEXT_LENGTH): string {
+  return String(value ?? '').trim().slice(0, maxLength);
+}
+
 function computeTotalDoses(frequencyPerDay: number, durationDays: number): number {
   return Math.max(1, frequencyPerDay) * Math.max(1, durationDays);
 }
@@ -34,6 +49,10 @@ function computeTotalDoses(frequencyPerDay: number, durationDays: number): numbe
 function computeNextDoseAt(startDate: Date, frequencyPerDay: number, completedDoses: number): Date {
   const intervalHours = 24 / Math.max(1, frequencyPerDay);
   return addHours(startDate, intervalHours * completedDoses);
+}
+
+function formatReminderTime(date: Date): string {
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
 function computeDoseStatus(nextDoseAt: Date | null, isCompleted: boolean): DoseStatus {
@@ -80,17 +99,21 @@ async function getOwnedAnimal(userId: string, animalId: string) {
   });
 }
 
-async function upsertDoseReminder(params: {
+async function createDoseReminders(params: {
+  client: any;
   userId: string;
   farmId: string;
   animalName: string;
   itemId: string;
   drugName: string;
-  nextDoseAt: Date | null;
+  dosage: string;
+  startDate: Date;
+  frequencyPerDay: number;
+  totalDoses: number;
 }) {
   const marker = `[rx-dose:${params.itemId}]`;
 
-  await (prisma as any).reminder.deleteMany({
+  await params.client.reminder.deleteMany({
     where: {
       userId: params.userId,
       farmId: params.farmId,
@@ -98,22 +121,25 @@ async function upsertDoseReminder(params: {
     },
   });
 
-  if (!params.nextDoseAt) return;
+  for (let doseIndex = 0; doseIndex < params.totalDoses; doseIndex += 1) {
+    const doseAt = computeNextDoseAt(params.startDate, params.frequencyPerDay, doseIndex);
 
-  await (prisma as any).reminder.create({
-    data: {
-      userId: params.userId,
-      farmId: params.farmId,
-      title: `Give ${params.drugName}`,
-      date: params.nextDoseAt,
-      notes: `${marker} ${params.animalName}`,
-      dosage: null,
-      time: null,
-    },
-  });
+    await params.client.reminder.create({
+      data: {
+        userId: params.userId,
+        farmId: params.farmId,
+        title: `Give ${params.drugName}`,
+        date: doseAt,
+        notes: `${marker}:${doseIndex + 1}/${params.totalDoses} ${params.animalName}`,
+        dosage: params.dosage,
+        time: formatReminderTime(doseAt),
+      },
+    });
+  }
 }
 
 async function upsertWithdrawalReminder(params: {
+  client?: any;
   userId: string;
   farmId: string;
   animalName: string;
@@ -121,9 +147,10 @@ async function upsertWithdrawalReminder(params: {
   drugName: string;
   withdrawalDueAt: Date | null;
 }) {
+  const client = params.client || prisma;
   const marker = `[rx-withdrawal:${params.itemId}]`;
 
-  await (prisma as any).reminder.deleteMany({
+  await (client as any).reminder.deleteMany({
     where: {
       userId: params.userId,
       farmId: params.farmId,
@@ -133,7 +160,7 @@ async function upsertWithdrawalReminder(params: {
 
   if (!params.withdrawalDueAt) return;
 
-  await (prisma as any).reminder.create({
+  await (client as any).reminder.create({
     data: {
       userId: params.userId,
       farmId: params.farmId,
@@ -198,7 +225,7 @@ async function hydratePrescription(prescriptionId: string) {
 
 export const getAnimalPrescriptions = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -257,17 +284,29 @@ export const getAnimalPrescriptions = async (req: Request, res: Response) => {
   }
 };
 
+export const getPrescriptionDrugs = async (_req: Request, res: Response) => {
+  try {
+    const drugs = await (prisma as any).prescriptionDrug.findMany({
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    });
+
+    return res.status(200).json({ success: true, data: drugs });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'Failed to fetch prescription drugs', details: error });
+  }
+};
+
 export const createPrescription = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
     const animalId = req.body?.animalId?.toString();
-    const diagnosis = req.body?.diagnosis?.toString().trim();
-    const vetName = req.body?.vetName?.toString().trim();
-    const notes = req.body?.notes?.toString().trim();
+    const diagnosis = limitedText(req.body?.diagnosis, 160);
+    const vetName = limitedText(req.body?.vetName, 120);
+    const notes = limitedText(req.body?.notes, 1000);
     const itemsRaw = Array.isArray(req.body?.items) ? req.body.items : [];
 
     if (!animalId || !diagnosis) {
@@ -276,6 +315,10 @@ export const createPrescription = async (req: Request, res: Response) => {
 
     if (itemsRaw.length === 0) {
       return res.status(400).json({ success: false, error: 'At least one prescription item is required' });
+    }
+
+    if (itemsRaw.length > MAX_PRESCRIPTION_ITEMS) {
+      return res.status(400).json({ success: false, error: `At most ${MAX_PRESCRIPTION_ITEMS} prescription items are allowed` });
     }
 
     const animal = await getOwnedAnimal(userId, animalId);
@@ -295,14 +338,14 @@ export const createPrescription = async (req: Request, res: Response) => {
       });
 
       for (const raw of itemsRaw) {
-        const drugName = (raw?.drugName ?? '').toString().trim();
-        const dosage = (raw?.dosage ?? '').toString().trim();
-        const frequencyPerDay = Math.max(1, safeNum(raw?.frequencyPerDay, 1));
-        const durationDays = Math.max(1, safeNum(raw?.durationDays, 1));
+        const drugName = limitedText(raw?.drugName, 120);
+        const dosage = limitedText(raw?.dosage, 120);
+        const frequencyPerDay = boundedNum(raw?.frequencyPerDay, 1, 1, MAX_FREQUENCY_PER_DAY);
+        const durationDays = boundedNum(raw?.durationDays, 1, 1, MAX_DURATION_DAYS);
         const withdrawalPeriodDaysRaw = raw?.withdrawalPeriodDays;
         const withdrawalPeriodDays = withdrawalPeriodDaysRaw === null || withdrawalPeriodDaysRaw === undefined
           ? null
-          : Math.max(0, safeNum(withdrawalPeriodDaysRaw, 0));
+          : boundedNum(withdrawalPeriodDaysRaw, 0, 0, MAX_WITHDRAWAL_DAYS);
         const startDate = parseDate(raw?.startDate ?? new Date().toISOString());
 
         if (!drugName || !dosage) {
@@ -328,14 +371,30 @@ export const createPrescription = async (req: Request, res: Response) => {
           },
         });
 
-        await upsertDoseReminder({
+        await createDoseReminders({
+          client: tx,
           userId,
           farmId: animal.farm.id,
           animalName: animal.name,
           itemId: item.id,
           drugName,
-          nextDoseAt,
+          dosage,
+          startDate,
+          frequencyPerDay,
+          totalDoses,
         });
+
+        if (withdrawalPeriodDays !== null) {
+          await upsertWithdrawalReminder({
+            client: tx,
+            userId,
+            farmId: animal.farm.id,
+            animalName: animal.name,
+            itemId: item.id,
+            drugName,
+            withdrawalDueAt: addDays(startDate, durationDays + withdrawalPeriodDays),
+          });
+        }
       }
 
       return prescription;
@@ -350,7 +409,7 @@ export const createPrescription = async (req: Request, res: Response) => {
 
 export const updatePrescription = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -375,9 +434,9 @@ export const updatePrescription = async (req: Request, res: Response) => {
     }
 
     const data: Record<string, unknown> = {};
-    if (req.body?.diagnosis !== undefined) data.diagnosis = String(req.body.diagnosis).trim();
-    if (req.body?.vetName !== undefined) data.vetName = String(req.body.vetName || '').trim() || null;
-    if (req.body?.notes !== undefined) data.notes = String(req.body.notes || '').trim() || null;
+    if (req.body?.diagnosis !== undefined) data.diagnosis = limitedText(req.body.diagnosis, 160);
+    if (req.body?.vetName !== undefined) data.vetName = limitedText(req.body.vetName, 120) || null;
+    if (req.body?.notes !== undefined) data.notes = limitedText(req.body.notes, 1000) || null;
     if (req.body?.status !== undefined) data.status = String(req.body.status || 'ACTIVE').toUpperCase();
 
     const updated = await (prisma as any).prescription.update({
@@ -465,15 +524,6 @@ async function performMarkDoseGiven(params: {
       },
     });
 
-    await upsertDoseReminder({
-      userId,
-      farmId: prescription.animal.farm.id,
-      animalName: prescription.animal.name,
-      itemId,
-      drugName: item.drugName,
-      nextDoseAt,
-    });
-
     const withdrawalDueAt = isCompleted && item.withdrawalPeriodDays != null
       ? addDays(new Date(), item.withdrawalPeriodDays)
       : null;
@@ -500,7 +550,7 @@ async function performMarkDoseGiven(params: {
 
 export const markDoseGiven = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -532,12 +582,12 @@ export const markDoseGiven = async (req: Request, res: Response) => {
 
 export const syncPrescriptionOperations = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.uid;
+    const userId = await resolveDatabaseUserId(req, prisma);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const operations = Array.isArray(req.body?.operations) ? req.body.operations : [];
+    const operations = Array.isArray(req.body?.operations) ? req.body.operations.slice(0, MAX_SYNC_OPERATIONS) : [];
     const results: Array<Record<string, unknown>> = [];
 
     for (const operation of operations) {
