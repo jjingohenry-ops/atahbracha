@@ -3,6 +3,34 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 dotenv.config({ path: '.env.local', override: true });
 
+const parseCorsOrigins = (value: string | undefined): string[] => {
+  const rawOrigins = (value || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  const expandedOrigins = new Set<string>();
+
+  for (const origin of rawOrigins) {
+    expandedOrigins.add(origin);
+
+    try {
+      const parsed = new URL(origin);
+      if (parsed.hostname === 'atahbracha.com') {
+        expandedOrigins.add(`${parsed.protocol}//www.atahbracha.com`);
+      } else if (parsed.hostname === 'www.atahbracha.com') {
+        expandedOrigins.add(`${parsed.protocol}//atahbracha.com`);
+      }
+    } catch (_) {
+      // Ignore malformed origins here; validation will catch them in production.
+    }
+  }
+
+  return Array.from(expandedOrigins);
+};
+
+const corsOrigins = parseCorsOrigins(process.env['CORS_ORIGIN'] || 'http://localhost:3000');
+
 const config = {
   // Server
   PORT: process.env['PORT'] || 3000,
@@ -40,7 +68,8 @@ const config = {
   AWS_CLOUDFRONT_URL: process.env['AWS_CLOUDFRONT_URL'],
 
   // CORS
-  CORS_ORIGIN: process.env['CORS_ORIGIN'] || 'http://localhost:3000',
+  CORS_ORIGIN: corsOrigins[0] || 'http://localhost:3000',
+  CORS_ORIGINS: corsOrigins,
 };
 
 const validateProductionConfig = (): void => {
@@ -68,9 +97,16 @@ const validateProductionConfig = (): void => {
     );
   }
 
-  const corsOrigin = (process.env['CORS_ORIGIN'] || '').toLowerCase();
-  if (corsOrigin.includes('localhost') || corsOrigin.includes('127.0.0.1')) {
-    throw new Error('CORS_ORIGIN cannot point to localhost in production.');
+  const corsOriginList = parseCorsOrigins(process.env['CORS_ORIGIN']);
+  if (corsOriginList.length === 0) {
+    throw new Error('CORS_ORIGIN must include at least one allowed origin in production.');
+  }
+
+  for (const corsOrigin of corsOriginList) {
+    const lower = corsOrigin.toLowerCase();
+    if (lower.includes('localhost') || lower.includes('127.0.0.1')) {
+      throw new Error('CORS_ORIGIN cannot point to localhost in production.');
+    }
   }
 };
 
